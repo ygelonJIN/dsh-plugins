@@ -148,10 +148,13 @@ button.uc-pill:hover,button.uc-pill[aria-expanded=true]{background:var(--dsw-ali
 
     function costOf(usage, price) {
       const rate = 1e6;
+      // 官方价格页只有「命中 / 未命中 / 输出」三列,没有缓存写入档。
+      // DeepSeek 是自动缓存,写入不单独收费;真出现 cacheWriteTokens 时按
+      // 命中价计,避免用未命中价对同一批 token 重复收费。
       const input =
         (usage.uncachedInputTokens * price.miss +
           usage.cacheReadTokens * price.hit +
-          usage.cacheWriteTokens * price.miss) / rate;
+          usage.cacheWriteTokens * price.hit) / rate;
       const output = usage.outputTokens * price.out / rate;
       return { input, output, total: input + output };
     }

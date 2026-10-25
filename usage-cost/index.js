@@ -9,6 +9,12 @@ import { z } from 'zod';
  *   - Monday-Friday (excluding the holiday list): 09:00-12:00 and 14:00-18:00
  *     are peak; everything else is off-peak.
  *   - Weekends and listed holidays are off-peak all day.
+ *
+ * The period is picked from the moment the step STARTED, not from the moment
+ * the message finished: a stream that crosses 12:00 or 18:00 belongs to the
+ * tier in force when the request was sent, which is what the official bill
+ * charges. `step/start` carries that timestamp; when it is missing (old
+ * sessions) the event time is the only fallback available.
  */
 
 const SHANGHAI_OFFSET_MS = 8 * 3600 * 1000; // 北京时间固定 UTC+8
@@ -51,6 +57,12 @@ const usageByRouteStateSchema = z.object({
     period: z.enum(['offpeak', 'peak']),
     buckets: bucketsSchema,
   }).nullable(),
+  // 可选:升级前持久化的 state 没有这个键,缺失只表示"退回事件时刻"。
+  stepStart: z.object({
+    turn: z.number().int().nonnegative(),
+    step: z.number().int().nonnegative(),
+    at: z.number().nonnegative(),
+  }).nullable().optional(),
 }).strict();
 
 const usageByRouteViewSchema = z.object({
@@ -156,8 +168,16 @@ export function apply(ctx, config = {}) {
       key: 'usageByRoute',
       stateVersion: 1,
       stateSchema: usageByRouteStateSchema,
-      init: () => ({ routes: {}, slot: null }),
+      init: () => ({ routes: {}, slot: null, stepStart: null }),
       apply: (state, event) => {
+        // 记下这一步的发起时刻:assistant/message 的 event.time 是"答完"的时刻,
+        // 用它分桶会把跨 12:00 / 18:00 的长流式请求算到错误的时段。
+        if (event.type === 'step/start') {
+          const turn = event.data?.turn;
+          const step = event.data?.step;
+          if (!Number.isInteger(turn) || !Number.isInteger(step) || !Number.isFinite(event.time)) return state;
+          return { ...state, stepStart: { turn, step, at: event.time } };
+        }
         if (event.type === 'llm/retry-started') {
           return state.slot !== null && state.slot.turn === event.data.turn && state.slot.step === event.data.step
             ? { ...state, slot: null }
@@ -167,6 +187,8 @@ export function apply(ctx, config = {}) {
         const slot = state.slot;
         const { turn, step } = event.data;
         const sameAttempt = slot !== null && slot.turn === turn && slot.step === step;
+        const start = state.stepStart ?? null;
+        const pricedAt = start !== null && start.turn === turn && start.step === step ? start.at : event.time;
 
         // A final message without its own usage attributes the attempt's
         // pending (unrouted) sample to the message's route instead of dropping it.
@@ -197,7 +219,7 @@ export function apply(ctx, config = {}) {
         }
 
         const route = event.type === 'assistant/message' ? routeKeyOf(event.data.message) : null;
-        const period = periodOf(event.time, holidays, peakWindows);
+        const period = periodOf(pricedAt, holidays, peakWindows);
         const routes = route === null ? state.routes : withRoute(state.routes, route, period, buckets, 1);
         return { routes, slot: { turn, step, route, period, buckets } };
       },

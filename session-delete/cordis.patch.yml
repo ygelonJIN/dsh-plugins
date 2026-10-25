@@ -1,0 +1,10 @@
+# 对话删除：侧栏「…」菜单里的持久删除。
+#
+# 宿主半：POST /api/session-delete.delete（走 connection.fetch 的鉴权通道），
+# 删除前检查会话存在、没有活着的 Agent / 内存 Session、没有运行中的工作
+# （workspace/session-activity），并认领写锁；然后清理工作区归属、归档、置顶，
+# 最后删除会话目录（含子代理子对话）与投影缓存。共享附件不动。
+# 客户端半：菜单项 + 确认弹窗 + 成功提示；删除成功后刷新会话列表，并通知其他标签页。
+- insert:
+    - id: session-delete
+      name: '@local/session-delete'

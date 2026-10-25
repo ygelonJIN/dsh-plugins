@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Delete conversations",
+    "description": "Adds a Delete conversation item to every conversation's “…” menu. A confirmation dialog explains the permanent effect, the Host then refuses while the conversation is open or still has running work, and otherwise removes the log, subagent conversations, projection cache, and Workspace/archive/pin records. Shared attachments are kept."
+  }
+}

@@ -1,0 +1,9 @@
+# 审批出现时弹 macOS 系统通知;Client 半边给窗口画流动黄框。
+# sound 为 macOS 通知音名(Glass/Ping/Pop...),置空字符串则静音。
+- insert:
+    - id: approval-alert
+      name: '@local/approval-alert'
+      config:
+        enabled: true
+        sound: Glass
+        cooldownMs: 2500

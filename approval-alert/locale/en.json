@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Approval Alert (DSH notification)",
+    "description": "Pops a macOS notification under the DeepSeek Harness name and icon whenever an approval needs you, with a sound; clicking it brings the app back."
+  }
+}

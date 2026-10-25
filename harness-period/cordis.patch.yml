@@ -1,0 +1,12 @@
+# 峰谷判定 + 节假日覆盖。
+# 判定和节假日都读 ~/.tokenlensbar/prices.json 的 off_peak（旧 ~/.tokenlens 兼容；
+# 可用 TOKENLENSBAR_PRICES 或 TOKENLENS_PRICES 覆盖路径）：
+# 工作日 09:00-12:00、14:00-18:00 为峰时，周末和 holidays 全天为空闲。
+# UI：侧边栏左下角账户上方仅在节假日未配置时提示（黄色包裹），已配置不显示；
+#     输入框左侧控制区（模型选择器左边）显示高峰时段/空闲时段，冒号后跟原因
+#     （周末、节假日或时间），不占用模型名称宽度。
+#     两处都用与 1017 相同的小圆角包裹和字体，峰时黄色、空闲绿色。
+# 只用 Harness 主题 token，不覆盖主题。
+- insert:
+    - id: harness-period
+      name: '@local/harness-period'

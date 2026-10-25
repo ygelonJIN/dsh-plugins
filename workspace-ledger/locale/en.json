@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Workspace change ledger",
+    "description": "Read-only totals for the composer stats bar: added/deleted lines in the workspace against HEAD (untracked files count as additions) and the live session's per-turn change records."
+  }
+}

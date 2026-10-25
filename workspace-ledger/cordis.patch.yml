@@ -1,0 +1,6 @@
+# 工作区改动账本：为输入框下方的统计条提供一个只读的汇总接口。
+# 工作区数字 = git 相对 HEAD 的未提交改动（未跟踪文件计为新增），
+# 会话数字 = workspace-changes 记录器仍持有的分轮汇总（仅活动会话可读）。
+- insert:
+    - id: workspace-ledger
+      name: '@local/workspace-ledger'

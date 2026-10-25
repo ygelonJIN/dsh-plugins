@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "审批提醒(DSH 通知)",
+    "description": "出现审批请求时,以 DeepSeek Harness 的名称和图标弹出 macOS 系统通知,带提示音,点通知可回到应用。"
+  }
+}

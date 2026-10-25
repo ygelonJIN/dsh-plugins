@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Composer stats (usage + changes)",
+    "description": "Adds cache hit, peak/off-peak estimated cost and context occupancy to the composer stats bar, plus the workspace's added/deleted lines against HEAD and this session's per-turn breakdown."
+  }
+}

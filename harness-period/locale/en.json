@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Peak/off-peak and holidays",
-    "description": "Warns above the sidebar account only when holidays are not configured for the required years (hidden once configured), and shows peak/off-peak hours with a colon before the reason (weekend, holiday, or time) in the composer's left control area, left of the model selector without taking width from the model name. Both use the same tag shape and font as 1017; peak is yellow, off-peak green."
+    "title": "Low/high price periods",
+    "description": "Shows one tag in the composer's left control area (left of the model selector): low or high price, with the reason (weekend, holiday, or time) after a colon, without taking width from the model name. When holidays are not configured, the reason is replaced by 'holidays not configured'; the sidebar shows no notice. The tag matches 1017 in size and radius; low price is blue (the 1017 blue), high price is red."
   }
 }

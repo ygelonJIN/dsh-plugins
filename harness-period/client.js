@@ -11,32 +11,33 @@ window.__ModuleLoader__.load({
 
     const DICTS = {
       en: {
-        'period.peak': 'Peak',
-        'period.offpeak': 'Off-peak',
+        'period.low': 'Low',
+        'period.high': 'High',
         'period.separator': ': ',
         'period.weekend': 'weekend',
         'period.holiday': 'holiday',
-        'holiday.missing': 'Holidays not configured: {years}',
+        'holiday.missing': 'holidays not configured',
+        'holiday.missingDetail': 'holidays not configured ({years})',
         'list.separator': ', ',
       },
       zh: {
-        'period.peak': '高峰时段',
-        'period.offpeak': '空闲时段',
+        'period.low': '低价',
+        'period.high': '高价',
         'period.separator': '：',
         'period.weekend': '周末',
         'period.holiday': '节假日',
-        'holiday.missing': '节假日未配置：{years}',
+        'holiday.missing': '节假日未配置',
+        'holiday.missingDetail': '节假日未配置（{years}）',
         'list.separator': '、',
       },
     };
 
     // 只用主题 token，不加背景、边框或图标。
+    // 低价用 1017 标签的蓝（Tag tone="info"），高价用红色（Tag tone="danger"）。
     const CSS = `
-.hp-coverage{order:-1;flex:1;min-width:0;padding:0 4px 6px;display:flex;align-items:center}
 .hp-tag{display:inline-flex;align-items:center;border-radius:999px;corner-shape:round;padding:1px 8px;font-size:11px;line-height:17px;font-weight:500;white-space:nowrap}
-.hp-tag-peak{background:color-mix(in srgb,var(--dsw-alias-state-warn-primary) 12%,transparent);color:var(--dsw-alias-state-warn-primary)}
-.hp-tag-offpeak{background:color-mix(in srgb,var(--dsw-alias-state-success-primary) 10%,transparent);color:var(--dsw-alias-state-success-primary)}
-.hp-tag-warn{background:color-mix(in srgb,var(--dsw-alias-state-warn-primary) 12%,transparent);color:var(--dsw-alias-state-warn-primary)}
+.hp-tag-low{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 10%,transparent);color:var(--dsw-alias-state-business-primary)}
+.hp-tag-high{background:color-mix(in srgb,var(--dsw-alias-state-error-primary) 10%,transparent);color:var(--dsw-alias-state-error-primary)}
 .hp-period-control{display:inline-flex;align-items:center;min-width:0;margin-left:auto;padding:0 2px}
 `;
 
@@ -209,32 +210,26 @@ window.__ModuleLoader__.load({
       return state;
     }
 
-    // 侧边栏左下角账户上方的一行：只在节假日尚未配置时提示；已配置就整行不显示。
-    function CoverageView({ wide, t, clock }) {
-      const state = useClock(clock);
-      if (wide === false) return null;
-      if (state.missingYears.length === 0) return null;
-      const years = state.missingYears.join(t('list.separator') || '、');
-      const text = t('holiday.missing', { years });
-      return h('div', { className: 'hp-coverage', title: text },
-        h('span', { className: 'hp-tag hp-tag-warn' }, text));
-    }
-
-    // 输入框左侧控制区的峰谷标签；不占用右侧模型名称的宽度。
+    // 输入框左侧控制区（模型选择器左边）的一颗标签：低价/高价 + 原因。
+    // 节假日没配置时，原因位置直接显示「节假日未配置」，占满原因位。
     function PeriodView({ t, clock }) {
       const state = useClock(clock);
-      const peak = state.period === 'peak';
-      const reason = state.isHoliday
-        ? t('period.holiday')
-        : (state.isWeekend ? t('period.weekend') : '');
-      const label = peak ? t('period.peak') : t('period.offpeak');
+      const high = state.period === 'peak';
+      const missing = state.missingYears.length > 0;
+      const reason = missing
+        ? t('holiday.missing')
+        : (state.isHoliday ? t('period.holiday') : (state.isWeekend ? t('period.weekend') : ''));
+      const label = high ? t('period.high') : t('period.low');
       const separator = t('period.separator') || '：';
       const detail = reason !== '' ? reason : state.clock;
       const periodText = label + separator + detail;
-      const titleText = label + separator + (reason ? reason + ' ' : '') + state.clock;
+      const years = state.missingYears.join(t('list.separator') || '、');
+      const titleText = missing
+        ? label + separator + t('holiday.missingDetail', { years })
+        : label + separator + (reason ? reason + ' ' : '') + state.clock;
       return h('span', { className: 'hp-period-control' },
         h('span', {
-          className: 'hp-tag ' + (peak ? 'hp-tag-peak' : 'hp-tag-offpeak'),
+          className: 'hp-tag ' + (high ? 'hp-tag-high' : 'hp-tag-low'),
           title: titleText,
         }, periodText));
     }
@@ -292,17 +287,6 @@ window.__ModuleLoader__.load({
             window.clearTimeout(initial);
           };
         });
-
-        ctx.effect(() => ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
-          name: 'sidebar.footer.action',
-          id: 'harness-period-holidays',
-          order: 0,
-          locale: NS,
-        }, (props) => h(CoverageView, {
-          wide: props.wide,
-          t: pickT(props.t),
-          clock,
-        }))));
 
         ctx.effect(() => ctx.slots.inject('conversation.input.left', () => ctx.slots.register({
           name: 'conversation.input.left',

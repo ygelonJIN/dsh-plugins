@@ -1,10 +1,15 @@
 # 对话删除：侧栏「…」菜单里的持久删除。
 #
-# 宿主半：POST /api/session-delete.delete（走 connection.fetch 的鉴权通道），
-# 删除前检查会话存在、没有活着的 Agent / 内存 Session、没有运行中的工作
-# （workspace/session-activity），并认领写锁；然后清理工作区归属、归档、置顶，
-# 最后删除会话目录（含子代理子对话）与投影缓存。共享附件不动。
-# 客户端半：菜单项 + 确认弹窗 + 成功提示；删除成功后刷新会话列表，并通知其他标签页。
+# 宿主半：POST /api/session-delete.delete（走 connection.fetch 的鉴权通道）。
+# 先停掉定时提醒/后台任务/当前回合，再检查会话是否可删：
+#   - 可以删：认领写锁，清理工作区归属、归档、置顶，删除会话目录（含子代理
+#     子对话）与投影缓存，返回 200；
+#   - 仍有 live Agent（写句柄被占）：立刻归档隐藏，写入待删队列
+#     <DSH_HOME>/storages/session-delete/pending.json，返回 202；下次 Host
+#     启动、Agent 恢复之前自动删除；页面加载和每分钟也会重试一次（Host 不重启
+#     时也能清掉）；重启前取消归档即视为撤销删除。
+# 共享附件不动。
+# 客户端半：菜单项 + 确认弹窗 + 成功/排队提示；删除后刷新会话列表，并通知其他标签页。
 - insert:
     - id: session-delete
       name: '@local/session-delete'

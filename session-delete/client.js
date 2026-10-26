@@ -19,12 +19,13 @@ window.__ModuleLoader__.load({
     const CHANNEL = 'session-delete';
     const STYLE_ID = '@local/session-delete/styles';
     const TOAST_MS = 4000;
+    const WORKSPACE_VIEW_KEY = 'dsh.workspace.view.v5';
 
     const DICTS = {
       en: {
         'menu.delete': 'Delete conversation',
         'dialog.title': 'Permanently delete this conversation?',
-        'dialog.body': 'Delete “{title}” from disk, including its subagent conversations, projection cache, and Workspace, archive, and pin records. This cannot be undone.',
+        'dialog.body': 'Delete “{title}” from disk, including its subagent conversations, projection cache, and Workspace, archive, and pin records. Running work is stopped first. A conversation still in use is archived now and removed when DSH restarts. This cannot be undone.',
         'dialog.cancel': 'Cancel',
         'dialog.confirm': 'Delete permanently',
         'dialog.deleting': 'Deleting…',
@@ -47,11 +48,12 @@ window.__ModuleLoader__.load({
         'detail.separator': ': ',
         'list.separator': ', ',
         'toast.deleted': 'Deleted “{title}”',
+        'toast.queued': 'Queued for deletion: “{title}”. Quit and reopen DSH to finish removing it.',
       },
       zh: {
         'menu.delete': '删除对话',
         'dialog.title': '永久删除此对话？',
-        'dialog.body': '将从磁盘删除“{title}”的聊天记录，包括它的子代理对话、投影缓存，以及工作区、归档和置顶记录。此操作无法撤销。',
+        'dialog.body': '将从磁盘删除“{title}”的聊天记录，包括它的子代理对话、投影缓存，以及工作区、归档和置顶记录。运行中的工作会先停止；仍在使用的对话会先归档，下次启动 DSH 时删除。此操作无法撤销。',
         'dialog.cancel': '取消',
         'dialog.confirm': '永久删除',
         'dialog.deleting': '正在删除…',
@@ -74,6 +76,7 @@ window.__ModuleLoader__.load({
         'detail.separator': '：',
         'list.separator': '、',
         'toast.deleted': '已删除“{title}”',
+        'toast.queued': '已加入删除队列：“{title}”。退出并重新打开 DSH 后完成删除。',
       },
     };
 
@@ -119,6 +122,7 @@ window.__ModuleLoader__.load({
       } catch (error) {
         console.warn('[session-delete] session list refresh failed:', error);
       }
+      pruneUnknownSessions();
     }
 
     function navigateAway() {
@@ -134,6 +138,69 @@ window.__ModuleLoader__.load({
         channel?.postMessage({ type: 'deleted', sessionId });
       } catch {
         // A closed channel only affects cross-tab refresh.
+      }
+    }
+
+    function pruneWorkspaceOrder(ids) {
+      if (ids.length === 0) return;
+      try {
+        const raw = localStorage.getItem(WORKSPACE_VIEW_KEY);
+        if (raw === null) return;
+        const data = JSON.parse(raw);
+        const removed = new Set(ids);
+        const orders = data.sessionOrderByAccount;
+        if (orders !== null && typeof orders === 'object') {
+          for (const key of Object.keys(orders)) {
+            if (Array.isArray(orders[key])) orders[key] = orders[key].filter((id) => !removed.has(id));
+          }
+        }
+        localStorage.setItem(WORKSPACE_VIEW_KEY, JSON.stringify(data));
+      } catch {
+        // A malformed cache is not worth failing the delete.
+      }
+    }
+
+    function mainSessionId() {
+      try {
+        const snapshot = runtime.sessions?.list?.getSnapshot?.();
+        for (const row of Object.values(snapshot?.byId ?? {})) {
+          if ((row.retainedBy?.mainView ?? 0) > 0) return row.sessionId;
+        }
+      } catch {
+        // Fall through.
+      }
+      return runtime.uiWorkspace?.mainReference?.sessionId;
+    }
+
+    function knownSessionIds() {
+      try {
+        const snapshot = runtime.sessions?.list?.getSnapshot?.();
+        const rows = snapshot?.byId;
+        if (rows === undefined || rows === null || Object.keys(rows).length === 0) return null;
+        return new Set(Object.keys(rows));
+      } catch {
+        return null;
+      }
+    }
+
+    /** Drop ids the Host no longer lists; a deleted Session otherwise lingers as an empty row. */
+    function pruneUnknownSessions() {
+      const known = knownSessionIds();
+      if (known === null) return;
+      try {
+        const raw = localStorage.getItem(WORKSPACE_VIEW_KEY);
+        if (raw === null) return;
+        const data = JSON.parse(raw);
+        const orders = data.sessionOrderByAccount;
+        if (orders === null || typeof orders !== 'object') return;
+        const stale = new Set();
+        for (const key of Object.keys(orders)) {
+          if (!Array.isArray(orders[key])) continue;
+          for (const id of orders[key]) if (!known.has(id)) stale.add(id);
+        }
+        pruneWorkspaceOrder([...stale]);
+      } catch {
+        // Ignore cache damage.
       }
     }
 
@@ -178,7 +245,13 @@ window.__ModuleLoader__.load({
         return;
       }
       if (status >= 200 && status < 300 && payload !== null && payload.ok === true) {
-        publish({ request: null, busy: false, error: null, toast: { kind: 'success', title: request.title } });
+        const queued = payload.queued === true;
+        publish({
+          request: null,
+          busy: false,
+          error: null,
+          toast: { kind: queued ? 'queued' : 'deleted', title: request.title },
+        });
         await refreshSessions();
         if (request.isMain) navigateAway();
         notifyOtherTabs(request.sessionId);
@@ -300,9 +373,11 @@ window.__ModuleLoader__.load({
       const modal = h(Modal, modalProps);
 
       const notice = toast === null ? null : h(Toast, {
-        text: t('toast.deleted', { title: toast.title !== '' ? toast.title : t('dialog.untitled') }),
+        text: t(toast.kind === 'queued' ? 'toast.queued' : 'toast.deleted', {
+          title: toast.title !== '' ? toast.title : t('dialog.untitled'),
+        }),
         tone: 'success',
-        holdMs: TOAST_MS,
+        holdMs: toast.kind === 'queued' ? TOAST_MS * 2 : TOAST_MS,
         onDone: () => {
           if (snapshot.toast === toast) publish({ ...snapshot, toast: null });
         },
@@ -348,6 +423,38 @@ window.__ModuleLoader__.load({
         ctx.effect(() => () => {
           publish({ request: null, busy: false, error: null, toast: null });
         });
+
+        // Closing and reopening the window does not restart the Host, so a
+        // queued deletion also gets a chance on every page load.
+        ctx.effect(() => {
+          const timers = [
+            setTimeout(() => { pruneUnknownSessions(); }, 2500),
+            setTimeout(() => { pruneUnknownSessions(); }, 8000),
+          ];
+          return () => {
+            for (const timer of timers) clearTimeout(timer);
+          };
+        }, 'session-delete: prune stale rows');
+
+        ctx.effect(() => {
+          const timer = setTimeout(() => {
+            void fetch('api/session-delete.purge', {
+              method: 'POST',
+              headers: { accept: 'application/json' },
+            }).then(async (response) => {
+              const payload = await response.json().catch(() => null);
+              if (payload?.ok !== true || !Array.isArray(payload.deleted) || payload.deleted.length === 0) return;
+              const main = mainSessionId();
+              pruneWorkspaceOrder(payload.deleted);
+              await refreshSessions();
+              if (typeof main === 'string' && payload.deleted.includes(main)) {
+                try { runtime.uiWorkspace?.startSession?.(); } catch { /* ignore */ }
+              }
+              for (const sessionId of payload.deleted) notifyOtherTabs(sessionId);
+            }).catch(() => {});
+          }, 1500);
+          return () => clearTimeout(timer);
+        }, 'session-delete: purge on page load');
 
         // Native destructive row: the shared MenuItemButton supplies the exact
         // shipped height, padding, icon, hover, focus, and danger colors.

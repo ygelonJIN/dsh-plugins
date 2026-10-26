@@ -1,9 +1,12 @@
 {
   "name": "@local/session-delete",
-  "version": "1.0.0",
+  "version": "1.1.5",
   "private": true,
   "type": "module",
-  "description": "Delete a conversation permanently from the session menu: confirmed, guarded by the Host, and cleans Workspace/archive/pin records.",
+  "description": "Delete a conversation permanently from the session menu: confirmed, guarded by the Host, queued across restarts when still in use, and cleans Workspace/archive/pin records.",
+  "scripts": {
+    "test": "node test/session-storage.test.mjs && node test/pending.test.mjs && node test/route.test.mjs"
+  },
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
@@ -12,6 +15,7 @@
   },
   "files": [
     "index.js",
+    "pending.js",
     "session-storage.js",
     "client.js",
     "cordis.patch.yml",
@@ -19,7 +23,9 @@
     "icon.svg"
   ],
   "dsh": {
-    "bundle": { "patch": "./cordis.patch.yml" },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "platform": "web",
       "immediately": true,

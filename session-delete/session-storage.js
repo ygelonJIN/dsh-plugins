@@ -39,6 +39,29 @@ export function projectionCacheRoot() {
   return path.join(dshHome(), 'storages', 'session_projcache', 'sessions');
 }
 
+/** Root of the optional session-undo snapshot stores. */
+export function undoStoreRoot() {
+  return path.join(dshHome(), 'undo', 'sessions');
+}
+
+/**
+ * Drop the undo snapshot store that may belong to each Session. The undo
+ * plugin is optional, so a missing directory is not an error.
+ * @returns {Promise<string[]>} warnings for failures other than absence.
+ */
+export async function removeUndoStores(sessionIds) {
+  const warnings = [];
+  for (const sessionId of sessionIds) {
+    if (!isSessionId(sessionId)) continue;
+    try {
+      await rm(path.join(undoStoreRoot(), sessionId), { recursive: true, force: true });
+    } catch (error) {
+      warnings.push(`undo store ${sessionId}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  return warnings;
+}
+
 /**
  * Locate every project directory that owns a directory named `sessionId`.
  *

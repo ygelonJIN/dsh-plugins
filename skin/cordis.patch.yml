@@ -1,0 +1,4 @@
+# Ygelon 品牌皮肤：只改客户端，侧栏标志和名称。
+- insert:
+    - id: skin
+      name: '@local/skin'

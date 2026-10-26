@@ -1,0 +1,12 @@
+# 侧栏标注：会话/工作区的标注（名称底部黑色下划线）。
+#
+# 宿主半：marks.json（<DSH_HOME>/storages/sidebar-marks/）只存标注，走
+# connection.fetch 的鉴权通道：
+#   - GET  /api/sidebar-marks.state        全部标注
+#   - POST /api/sidebar-marks.mark         设置/清除一条标注
+# 客户端半：会话「…」菜单的「标记/取消标记」（官方槽位）、工作区「…」菜单的
+# 「标记/取消标记」（官方菜单写死，DOM 注入）、行装饰（当前会话行最显著、
+# 标注第二、运行中的转圈与标题加重）。
+- insert:
+    - id: sidebar-marks
+      name: '@local/sidebar-marks'

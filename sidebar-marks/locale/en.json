@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Sidebar marks",
+    "description": "Adds \"Mark\" to the conversation and workspace \"…\" menus: one click draws a black underline under the name, the next clears it. The open conversation row is the most prominent, marks second; running conversations show a stronger spinner on the left and running workspaces get the same spinner plus a count beside the folder icon. Client-side look only — the Host just stores the marks."
+  }
+}

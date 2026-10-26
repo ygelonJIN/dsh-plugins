@@ -1,0 +1,38 @@
+{
+  "name": "@local/session-undo",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "description": "Undo a turn and everything after it: fork the conversation at the cut, put the undone message back in the composer, clear an inherited goal, and archive the old session for deletion. Files are never changed.",
+  "scripts": {
+    "test": "node test/preflight.test.mjs && node test/client.test.mjs"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "preflight.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-api-session-controller",
+        "@deepseek-ai/dsh-client-ui-workspace",
+        "@deepseek-ai/dsh-client-ui-chat"
+      ]
+    }
+  }
+}

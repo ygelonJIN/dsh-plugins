@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Session undo",
+    "description": "Adds an Undo action beside Copy on user messages: preflight reads only the conversation, then forks at the cut (blank for the first turn), puts the undone message back in the composer, clears an inherited goal, and archives the old conversation. Conversation-only; files are never changed."
+  }
+}

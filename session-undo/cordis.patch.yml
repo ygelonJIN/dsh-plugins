@@ -1,0 +1,13 @@
+# 会话撤回（只撤对话，不碰文件）。
+#
+# 宿主半：POST /api/session-undo.preflight，只读一次会话事件（observeSession），
+# 返回将移除的轮次/消息/工具调用、切点 seq、是否第 1 轮、旧会话的活动、被撤
+# 用户消息。不做快照、不读工作区；旧版本留下的 <DSH_HOME>/undo 会在加载时删掉。
+#
+# 客户端半：用户消息操作行（复制按钮右侧）的撤回入口（官方没有 slot，用 DOM
+# 注入克隆复制按钮样式）；确认后 fork 到切点（第 1 轮则新建空白对话），把被撤
+# 消息放回新会话输入框、清掉 fork 复制过来的旧目标，再调用 session-delete
+# 归档排队删除旧会话。
+- insert:
+    - id: session-undo
+      name: '@local/session-undo'

@@ -24,6 +24,7 @@ window.__ModuleLoader__.load({
       en: {
         'look.tab': 'Appearance',
         'look.title': 'Appearance',
+        'look.follow': 'Content surfaces follow the accent (bubble, code block, tool output, inline code)',
         'look.desc': 'Pick a target above — the accent or one background surface — then drag on the colour field. '
           + 'Every hue runs left to right, brightness top to bottom, so red, orange, green, blue and purple are all in '
           + 'the same picture; the strip below sets how saturated. Brand name, slogan and icon are further down.',
@@ -50,9 +51,35 @@ window.__ModuleLoader__.load({
         'look.target.groupEdge': 'Workspace card outline',
         'look.target.rowOpen': 'Open row',
         'look.target.rowRun': 'Running row',
-        'look.seatHint': 'The fade above the composer only takes an opacity — it never gets a colour.',
+        'look.hint.seed': "Accent colour — the whole derived scale: buttons, links, focus rings, selected states.",
+        'look.hint.sidebar': "The left column (files) background; on macOS it also decides how much vibrancy shows through.",
+        'look.hint.sidebarShadow': "Drop shadow for the whole left column.",
+        'look.hint.rowOpen': "The sidebar row of the conversation you have open.",
+        'look.hint.rowRun': "Sidebar rows that are running, or finished and not read yet.",
+        'look.hint.groupCard': "The group box sidebar-marks draws around an expanded workspace.",
+        'look.hint.groupEdge': "Hairline of that group box; the outline of the composer and message bubbles reuse it too.",
+        'look.hint.rowIcon': "The ellipsis / pin / archive icons that appear when hovering a sidebar row.",
+        'look.hint.base': "The main conversation column — the whole area the messages sit on.",
+        'look.hint.card': "First-level card: changed-files card, tool output frame, hover previews, settings panels.",
+        'look.hint.nested': "Second-level raised surface: code viewer, registry dialogs, switch panels in Settings.",
+        'look.hint.bubble': "The bubble of the messages you send.",
+        'look.hint.code': "Highlighted code blocks that have a language name (not the banner above them).",
+        'look.hint.codeBanner': "The strip above a code block: language name (or “Code block”) and the copy button.",
+        'look.hint.inlineCode': "The small pill for inline `code` inside running text.",
+        'look.hint.toolOutput': "The output area of an expanded tool call; also drives turn triggers and the search panel.",
+        'look.hint.deliverable': "The file card shown when I deliver a file to you.",
+        'look.hint.changesHead': "The header row of the “edited files” card.",
+        'look.hint.changesRow': "Each file row inside that card (no background by default).",
+        'look.hint.dialog': "The composer card; the info card under it reuses the same colour.",
+        'look.hint.seat': "The 36px fade right above the composer — opacity only, it never takes a colour.",
+        'look.hint.menu': "Account menu and every popover: context, queue, stats panels.",
+        'look.hint.icon': "The sidebar brand mark and the browser tab icon.",
+        'look.hint.brandLead': "Colour of the first half of the brand name.",
+        'look.hint.brandTail': "Colour of the second half of the brand name.",
         'look.target.icon': 'Icon',
         'look.target.rowIcon': 'Row action icons',
+        'look.target.deliverable': 'Delivered file',
+        'look.target.sidebarShadow': 'Sidebar shadow',
         'look.target.changesHead': 'Edited-files header',
         'look.target.changesRow': 'Edited-files row',
         'look.target.brandLead': 'Name, first',
@@ -75,6 +102,7 @@ window.__ModuleLoader__.load({
       zh: {
         'look.tab': '外观',
         'look.title': '外观',
+        'look.follow': '内容面跟随主色（气泡 / 代码块 / 工具输出 / 行内代码）',
         'look.desc': '先在上面选一项——主色或某个背景面——再在下面那张色域图上按住拖动就能改它。'
           + '横向是全部色相、纵向是明暗，红橙黄绿蓝紫都在同一张图里；下面那条带子决定选多浓。'
           + '品牌名称、标语和图标在本页最下方。',
@@ -101,9 +129,35 @@ window.__ModuleLoader__.load({
         'look.target.groupEdge': '工作区卡片描边',
         'look.target.rowOpen': '当前对话底色',
         'look.target.rowRun': '运行中 / 完成底色',
-        'look.seatHint': '输入框上方那条渐隐只调透明度，不参与配色。',
+        'look.hint.seed': "主色——派生出整套色阶：按钮、链接、焦点环、选中态都跟着变。",
+        'look.hint.sidebar': "左侧整列（文件区）的底色；macOS 下还决定毛玻璃透出多少。",
+        'look.hint.sidebarShadow': "左侧整列的投影。",
+        'look.hint.rowOpen': "侧栏里你当前打开的那一行。",
+        'look.hint.rowRun': "侧栏里正在运行、以及跑完还没看的行。",
+        'look.hint.groupCard': "sidebar-marks 给展开的工作区画的那张组框底色。",
+        'look.hint.groupEdge': "那张组框的发丝描边；输入框和消息气泡的包边也复用它。",
+        'look.hint.rowIcon': "侧栏行悬停时出现的省略号 / 置顶 / 归档图标。",
+        'look.hint.base': "主对话区的底色——所有消息所在的那一整片。",
+        'look.hint.card': "一级卡片：改动文件卡片、工具输出框、悬停预览、设置面板。",
+        'look.hint.nested': "二级抬升面：代码查看器、注册表弹窗、设置里的开关面板。",
+        'look.hint.bubble': "你自己发的消息气泡。",
+        'look.hint.code': "写了语言名的高亮代码块主体（不含它上面的语言条）。",
+        'look.hint.codeBanner': "代码块顶部那条：语言名（或“代码块”）加复制按钮。",
+        'look.hint.inlineCode': "正文里反引号包起来的那个小胶囊（`npm test` 这种）。",
+        'look.hint.toolOutput': "工具调用展开后的输出区；也会带动 turn trigger 和搜索面板。",
+        'look.hint.deliverable': "我交付文件时给你看的那张文件卡片。",
+        'look.hint.changesHead': "「已编辑文件」卡片的标题行。",
+        'look.hint.changesRow': "那张卡片里逐个文件的行（官方原本没有底色）。",
+        'look.hint.dialog': "输入卡片；输入框下方那排信息卡片也复用它。",
+        'look.hint.seat': "输入框上方那条 36px 渐隐——只能调透明度，不参与配色。",
+        'look.hint.menu': "账户菜单，以及上下文 / 队列 / 统计等所有浮层。",
+        'look.hint.icon': "侧栏品牌标志和浏览器页签图标。",
+        'look.hint.brandLead': "品牌名前半段的颜色。",
+        'look.hint.brandTail': "品牌名后半段的颜色。",
         'look.target.icon': '图标',
         'look.target.rowIcon': '侧栏行图标',
+        'look.target.deliverable': '交付文件卡片',
+        'look.target.sidebarShadow': '侧栏阴影',
         'look.target.changesHead': '已编辑文件（头行）',
         'look.target.changesRow': '已编辑文件（文件行）',
         'look.target.brandLead': '名称·前段',
@@ -144,6 +198,7 @@ window.__ModuleLoader__.load({
       surfaces: {},
       alphas: {},
       paint: {},
+      follow: false,
     };
 
     // 直接着色的目标：不走 token，直接写进组件的颜色。
@@ -157,6 +212,11 @@ window.__ModuleLoader__.load({
       // 代码块语言条实际是 banner 外层用 bg-base、内层 [data-code-block-banner] 自身没背景，
       // 覆盖 banner token 根本没被渲染路径读取，只能直接给那个元素上背景。
       { id: 'codeBanner', storeKey: 'codeBannerColor', fallback: 'var(--dsw-static-neutral-bluish-50)', alpha: true },
+      // 对话里交付的文件卡片（[data-presented-file]）：底色来自组件在 .root 上声明的
+      // --deliverable-fill，同样祖先覆盖不到，直接给元素上背景。
+      { id: 'deliverable', storeKey: 'deliverableColor', fallback: 'var(--dsw-static-neutral-50)', alpha: true },
+      // 包边与阴影：几何形状写死在规则里，这里只调颜色+浓度。
+      { id: 'sidebarShadow', storeKey: 'sidebarShadowColor', fallback: 'rgba(0,0,0,.12)', alpha: true },
       { id: 'changesHead', storeKey: 'changesHeadColor', fallback: 'var(--dsw-static-neutral-50)', alpha: true },
       { id: 'changesRow', storeKey: 'changesRowColor', fallback: 'transparent', alpha: true },
       { id: 'brandLead', storeKey: 'leadColor', fallback: 'var(--dsw-alias-label-primary)' },
@@ -166,13 +226,11 @@ window.__ModuleLoader__.load({
     // 可改背景的表面：加一个新区域 = 往这张表加一行，外观页自动多一个目标。
     // pane: 官方把透明度硬编码在 hash 类名规则里，只能整条重写（见 PANE_RULES）；
     // fallback: 官方浅/深两色，用户只调透明度不选色时当底色。
-    // 工作区组卡片的默认值，必须等于 sidebar-marks 里那两个变量的默认观感，
-    // 没调过时才算“零变化”；透明度会再乘上去，所以这里保留原本的 5% / 22%。
-    const WORKSPACE_FILL = 'color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent)';
-    const WORKSPACE_EDGE = 'color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent)';
-    // 侧栏两档行底色，默认值等于 sidebar-marks 里的 30% / 15%（完成未读跟运行中同一条变量）。
-    const ROW_OPEN = 'color-mix(in srgb,var(--dsw-alias-state-business-primary) 30%,transparent)';
-    const ROW_RUN = 'color-mix(in srgb,var(--dsw-alias-state-business-primary) 15%,transparent)';
+    // fallback 一律写**纯色**，浓度交给透明度滑条：滑条 0–100 就是 0–100%，
+    // 拖满是实色。这几项原来的“出厂浓度”放在 ALPHA_DEFAULT 里当滑条默认值。
+    const ALPHA_DEFAULT = { sidebar: 40, rowOpen: 30, rowRun: 15, groupCard: 5, groupEdge: 22 };
+    const LABEL_PRIMARY = 'var(--dsw-alias-label-primary)';
+    const BUSINESS = 'var(--dsw-alias-state-business-primary)';
 
     const SURFACES = [
       { id: 'sidebar', tokens: ['--dsw-specific-sidebar-fill'], pane: true, fallback: { light: '#f9fafb', dark: '#1b1b1c' } },
@@ -180,7 +238,7 @@ window.__ModuleLoader__.load({
       { id: 'card', tokens: ['--dsw-alias-bg-layer-1'], fallback: { light: '#ffffff', dark: '#232324' } },
       { id: 'nested', tokens: ['--dsw-alias-bg-layer-2'], fallback: { light: '#ffffff', dark: '#2c2c2e' } },
       { id: 'dialog', tokens: ['--dsw-specific-input-major'], fallback: { light: '#ffffff', dark: '#2c2c2e' } },
-      { id: 'bubble', tokens: ['--dsw-specific-bubble'], fallback: { light: '#edf3fe', dark: '#2c2c2e' } },
+      { id: 'bubble', tokens: ['--dsw-specific-bubble'], fallback: { light: '#edf3fe', dark: '#2c2c2e' }, follow: true },
       // 对话区里的 Markdown 块：代码块（含顶部语言条，一起走才不割裂）和行内 code。
       // 它们跟「卡片」用的 bg-layer-1 是两套 token，所以之前调卡片对代码块无效。
       // 代码块主体：走 Shiki 自己的 --shiki-background（它默认指向 code-block），
@@ -188,6 +246,7 @@ window.__ModuleLoader__.load({
       {
         id: 'code',
         tokens: ['--shiki-background'],
+        follow: true,
         fallback: {
           light: 'var(--dsw-static-neutral-bluish-50)',
           dark: 'var(--dsw-static-neutral-bluish-900)',
@@ -196,6 +255,7 @@ window.__ModuleLoader__.load({
       {
         id: 'toolOutput',
         tokens: ['--dsw-alias-markdown-code-block'],
+        follow: true,
         fallback: {
           light: 'var(--dsw-static-neutral-bluish-50)',
           dark: 'var(--dsw-static-neutral-bluish-900)',
@@ -204,6 +264,7 @@ window.__ModuleLoader__.load({
       {
         id: 'inlineCode',
         tokens: ['--dsw-alias-markdown-inline-code'],
+        follow: true,
         fallback: { light: 'var(--dsw-static-neutral-50)', dark: 'var(--dsw-static-neutral-800)' },
       },
       // 弹层底色有两层名字，必须一起写：
@@ -218,12 +279,12 @@ window.__ModuleLoader__.load({
       },
       // sidebar-marks 画的工作区组卡片：那两个变量由它在 body 上声明，
       // 这里用同一套机制覆盖（内联压过它的样式表规则），透明度照样折进值里。
-      { id: 'groupCard', tokens: ['--sm-frame-fill'], fallback: { light: WORKSPACE_FILL, dark: WORKSPACE_FILL } },
-      { id: 'groupEdge', tokens: ['--sm-frame'], fallback: { light: WORKSPACE_EDGE, dark: WORKSPACE_EDGE } },
+      { id: 'groupCard', tokens: ['--sm-frame-fill'], fallback: { light: LABEL_PRIMARY, dark: LABEL_PRIMARY } },
+      { id: 'groupEdge', tokens: ['--sm-frame'], fallback: { light: LABEL_PRIMARY, dark: LABEL_PRIMARY } },
       // 侧栏行的两档底色（sidebar-marks 的变量，同样走 body 内联覆盖）。
       // 「运行中」这一条同时管完成未读：那边读的是同一个 --sm-run-fill。
-      { id: 'rowOpen', tokens: ['--sm-open-fill'], fallback: { light: ROW_OPEN, dark: ROW_OPEN } },
-      { id: 'rowRun', tokens: ['--sm-run-fill'], fallback: { light: ROW_RUN, dark: ROW_RUN } },
+      { id: 'rowOpen', tokens: ['--sm-open-fill'], fallback: { light: BUSINESS, dark: BUSINESS } },
+      { id: 'rowRun', tokens: ['--sm-run-fill'], fallback: { light: BUSINESS, dark: BUSINESS } },
       // 输入框上方的渐隐遮罩（composerSeat）：不是 token 面，只给一条透明度滑条。
       { id: 'seat', tokens: [], alphaOnly: true, fallback: { light: '#ffffff', dark: '#151517' } },
     ];
@@ -272,6 +333,7 @@ window.__ModuleLoader__.load({
           surfaces,
           alphas,
           paint,
+          follow: stored?.follow === true,
         };
       } catch {
         return { ...LOOK_DEFAULT };
@@ -351,9 +413,9 @@ window.__ModuleLoader__.load({
     // 这里显式排一遍，保证相邻的东西（比如代码块主体/语言条）挨在一起。
     const TARGET_ORDER = [
       'seed',
-      'sidebar', 'rowOpen', 'rowRun', 'groupCard', 'groupEdge', 'rowIcon',
+      'sidebar', 'sidebarShadow', 'rowOpen', 'rowRun', 'groupCard', 'groupEdge', 'rowIcon',
       'base', 'card', 'nested', 'bubble',
-      'code', 'codeBanner', 'inlineCode', 'toolOutput', 'changesHead', 'changesRow',
+      'code', 'codeBanner', 'inlineCode', 'toolOutput', 'deliverable', 'changesHead', 'changesRow',
       'dialog', 'seat',
       'menu',
       'icon', 'brandLead', 'brandTail',
@@ -361,11 +423,11 @@ window.__ModuleLoader__.load({
 
     const GROUP_OF = {
       seed: 'seed',
-      sidebar: 'sidebar', rowOpen: 'sidebar', rowRun: 'sidebar',
+      sidebar: 'sidebar', sidebarShadow: 'sidebar', rowOpen: 'sidebar', rowRun: 'sidebar',
       groupCard: 'sidebar', groupEdge: 'sidebar', rowIcon: 'sidebar',
       base: 'chat', card: 'chat', nested: 'chat', bubble: 'chat',
       code: 'chat', codeBanner: 'chat', inlineCode: 'chat', toolOutput: 'chat',
-      changesHead: 'chat', changesRow: 'chat',
+      deliverable: 'chat', changesHead: 'chat', changesRow: 'chat',
       dialog: 'input', seat: 'input',
       menu: 'overlay',
       icon: 'brand', brandLead: 'brand', brandTail: 'brand',
@@ -826,22 +888,22 @@ window.__ModuleLoader__.load({
     // 规则只在用户真的调过透明度时才生效（靠 html 上的 data-ys-* 开关），
     // 否则系统「降低透明度」的官方降级不该被我们顶掉。
     const PANE_RULES = `
-html[data-ys-sidebar][data-platform=darwin] [class*="sidebarCol"][class*="sidebarCol"][class*="sidebarCol"]{background:linear-gradient(to bottom,#7a9bf01a,#7a9bf000 35%,#8f89b800 68%,#8f89b817),color-mix(in srgb,color-mix(in srgb,var(--dsw-specific-sidebar-fill) 97%,#7a9bf0) var(--ys-sidebar-alpha,40%),transparent)}
-html[data-ys-sidebar][data-platform=darwin] body[data-ds-dark-theme] [class*="sidebarCol"][class*="sidebarCol"][class*="sidebarCol"]{background:linear-gradient(to bottom,#7a9bf014,#7a9bf000 35%,#8f89b800 68%,#8f89b812),color-mix(in srgb,var(--dsw-specific-sidebar-fill) var(--ys-sidebar-alpha,50%),transparent)}
-html[data-ys-chat][data-platform=darwin] [class*="centerCol"][class*="centerCol"][class*="centerCol"]{background:linear-gradient(to bottom,#7a9bf01a,#7a9bf000 35%,#8f89b800 68%,#8f89b817),color-mix(in srgb,color-mix(in srgb,var(--dsw-alias-bg-base) 97%,#7a9bf0) var(--ys-chat-alpha,100%),transparent)}
-html[data-ys-chat][data-platform=darwin] [data-ys-chat-main][data-ys-chat-main][data-ys-chat-main]{background:linear-gradient(to bottom,#7a9bf01a,#7a9bf000 35%,#8f89b800 68%,#8f89b817),color-mix(in srgb,color-mix(in srgb,var(--dsw-alias-bg-base) 97%,#7a9bf0) var(--ys-chat-alpha,100%),transparent)}
+html[data-ys-sidebar][data-platform=darwin] [class*="sidebarCol"][class*="sidebarCol"][class*="sidebarCol"]{background:color-mix(in srgb,var(--dsw-specific-sidebar-fill) var(--ys-sidebar-alpha,40%),transparent)}
+html[data-ys-sidebar][data-platform=darwin] body[data-ds-dark-theme] [class*="sidebarCol"][class*="sidebarCol"][class*="sidebarCol"]{background:color-mix(in srgb,var(--dsw-specific-sidebar-fill) var(--ys-sidebar-alpha,50%),transparent)}
+html[data-ys-chat][data-platform=darwin] [class*="centerCol"][class*="centerCol"][class*="centerCol"]{background:color-mix(in srgb,var(--dsw-alias-bg-base) var(--ys-chat-alpha,100%),transparent)}
+html[data-ys-chat][data-platform=darwin] [data-ys-chat-main][data-ys-chat-main][data-ys-chat-main]{background:color-mix(in srgb,var(--dsw-alias-bg-base) var(--ys-chat-alpha,100%),transparent)}
 /* 输入框上方那块“渐隐”是 composerSeat 自带的 36px 渐变（透明 → 不透明 bg-base），
    它不是纯色背景层，所以对话区的透明度规则管不到它，要单写一条；它有自己的
    透明度变量 --ys-seat-alpha（外观页「输入框上渐隐」那一项）。只有
    [data-phase=active] 的会话页才有这层，空会话时官方本来就没有背景，别硬加。 */
 html[data-ys-seat][data-platform=darwin] [data-phase=active] [class*="composerSeat"],
-html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="composerSeat"]{background:linear-gradient(180deg,color-mix(in srgb,color-mix(in srgb,var(--dsw-alias-bg-base) 97%,#7a9bf0) 0%,transparent) 0px,color-mix(in srgb,color-mix(in srgb,var(--dsw-alias-bg-base) 97%,#7a9bf0) var(--ys-seat-alpha,100%),transparent) 36px)}
+html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="composerSeat"]{background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-alias-bg-base) 0%,transparent) 0px,color-mix(in srgb,var(--dsw-alias-bg-base) var(--ys-seat-alpha,100%),transparent) 36px)}
 `;
 
     // 输入框那排信息（插件 pill、上下文条）原来是散着的，整体包成一张卡片，
-    // 现在靠 InputBar 是 column flex 这一点，用 order:-1 把它挪到输入卡片**上方**（不动 DOM，
-    // 官方结构一变就自然回落）。形状像“从输入框里长出来”的翻转版：宽度自适应内容、
-    // 底边贴着输入卡片、只留上方两个圆角，底部两角用 radial-gradient 伪元素画成反向圆弧。
+    // 放在输入卡片**下方**（InputBar 是 column flex，order:0 即官方位置）。
+    // 形状像“从输入框里长出来”：宽度自适应内容、顶边贴着输入卡片、只留下方两个圆角，
+    // 顶部两角用 radial-gradient 伪元素画成反向圆弧。挪到上方只需改回 order:-1 并把上下翻转。
     // 颜色和透明度直接吃 --dsw-specific-input-major，也就是外观页「输入框」那一项
     // （ui-layout 会把覆盖写成 body 内联变量），所以调输入框就一起变，不需要另开一项。
     const DOCK_RULES = `
@@ -853,6 +915,22 @@ html[data-ys-changes-head] [data-changed-files][data-changed-files][data-changed
   --changes-fill:var(--ys-changes-head);--changes-hover:var(--ys-changes-head)
 }
 html[data-ys-changes-row] [data-changed-files] [class*="_row"]{background:var(--ys-changes-row)}
+/* 交付文件卡片：组件把 --deliverable-fill 声明在 .root 上，祖先改不动，直接给卡片上色；
+   双属性是为了压过它自己的 :hover 规则。 */
+html[data-ys-deliverable] [data-presented-file][data-presented-file]{background-color:var(--ys-deliverable)}
+/* 包边与阴影：几何写死（inset 0 0 0 .5px 画发丝边、0 6px 18px 外阴影），
+   颜色/浓度由 --ys-* 变量给；颜色缺省时那一层是 transparent，等于不画。 */
+html[data-ys-sidebar-shadow] [class*="sidebarCol"]{box-shadow:var(--ys-sidebar-shadow)}
+/* 输入框卡片与用户消息气泡的包边/阴影，直接跟「工作区卡片」那一套共用变量：
+   0 0 14px 匀影 + inset 1px 发丝描边 + 顶部 1px 白高光。没装 sidebar-marks 时
+   用等价 fallback，观感一致。html 前缀是为了压过官方同名类规则。 */
+html [class*="_bubble"],
+html [class*="composerSeat"] [class*="_card"]{
+  box-shadow:
+    var(--sm-frame-lift,inset 0 1px 0 rgba(255,255,255,.22)),
+    var(--sm-frame-shadow,0 0 14px rgba(0,0,0,.10)),
+    inset 0 0 0 1px var(--sm-frame,color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent))
+}
 /* 代码块主体：有语言名时是 Shiki 的内联 style（var(--shiki-background)）；
    没语言名时渲染的是 <pre class="..._plain">，没有任何背景，露出的是容器上的 bg-base ——
    所以调「代码块（主体）」对它无效。这里用 md-code-block 这个稳定类名兜住 pre 和容器本身，
@@ -860,9 +938,8 @@ html[data-ys-changes-row] [data-changed-files] [class*="_row"]{background:var(--
 html[data-ys-code-block] [class*="md-code-block"],
 html[data-ys-code-block] [class*="md-code-block"] pre{background-color:var(--shiki-background)}
 /* 代码块语言条：真实结构是 bannerWrap（background-color: var(--dsw-alias-bg-base)）> 内层
-   [data-code-block-banner]（自己常常没有背景）。两层都上色才不会露出下面的 bg-base：
-   第二行用 :has 命中那个直接父级，不依赖 hash 类名。 */
-/* 只给内层上色，外层一律透明：两层都涂成同一个半透明色会叠出更深的一层
+   [data-code-block-banner]（自己常常没有背景）。只给内层上色、外层强制透明：
+   两层都涂成同一个半透明色会叠出更深的一层
    （1-(1-α)² 而不是 α），头行就会比内容区明显重。 */
 html[data-ys-code-banner] :has(> [data-code-block-banner]){background-color:transparent}
 html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-code-banner)}
@@ -872,16 +949,16 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
   --ys-dock-fill:var(--dsw-specific-input-major);
   --ys-dock-radius:10px;
   position:relative;box-sizing:border-box;width:fit-content;max-width:var(--dsh-composer-card-max-width);
-  order:-1;margin:0 auto;padding:5px 12px;
-  border-radius:var(--ys-dock-radius) var(--ys-dock-radius) 0 0;
+  order:0;margin:0 auto;padding:5px 12px;
+  border-radius:0 0 var(--ys-dock-radius) var(--ys-dock-radius);
   background:var(--ys-dock-fill)
 }
 [data-composer-dock]:not(:empty):before,
 [data-composer-dock]:not(:empty):after{
-  content:'';position:absolute;bottom:0;width:var(--ys-dock-radius);height:var(--ys-dock-radius)
+  content:'';position:absolute;top:0;width:var(--ys-dock-radius);height:var(--ys-dock-radius)
 }
-[data-composer-dock]:not(:empty):before{left:calc(-1 * var(--ys-dock-radius));background:radial-gradient(circle at 0% 0%,transparent var(--ys-dock-radius),var(--ys-dock-fill) var(--ys-dock-radius))}
-[data-composer-dock]:not(:empty):after{right:calc(-1 * var(--ys-dock-radius));background:radial-gradient(circle at 100% 0%,transparent var(--ys-dock-radius),var(--ys-dock-fill) var(--ys-dock-radius))}
+[data-composer-dock]:not(:empty):before{left:calc(-1 * var(--ys-dock-radius));background:radial-gradient(circle at 0% 100%,transparent var(--ys-dock-radius),var(--ys-dock-fill) var(--ys-dock-radius))}
+[data-composer-dock]:not(:empty):after{right:calc(-1 * var(--ys-dock-radius));background:radial-gradient(circle at 100% 100%,transparent var(--ys-dock-radius),var(--ys-dock-fill) var(--ys-dock-radius))}
 `;
 
 
@@ -900,8 +977,7 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
     // 对话区不止一层：centerCol、ConversationRoot，还可能有中间容器，每一层都吃同一个
     // bg-base 且不透明。只调最外层会被里面挡回去，所以从会话内容往上走，把整条
     // "背景就是 bg-base" 的链路都找出来一起调。结果缓存起来，拖动滑条时不再遍历 DOM。
-    const CHAT_BG = 'linear-gradient(to bottom,#7a9bf01a,#7a9bf000 35%,#8f89b800 68%,#8f89b817),'
-      + 'color-mix(in srgb,color-mix(in srgb,var(--dsw-alias-bg-base) 97%,#7a9bf0) VAR%,transparent)';
+    const CHAT_BG = 'color-mix(in srgb,var(--dsw-alias-bg-base) VAR%,transparent)';
 
     let chatNodesCache = [];
 
@@ -963,7 +1039,7 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
      * 以及缓存节点已经脱离文档（isConnected === false）。流式输出只改文本、节点还在，
      * 所以不会触发重跑。
      */
-    function watchChatLayers() {
+    function watchChatLayers(onRebuild) {
       if (typeof MutationObserver !== 'function' || typeof document === 'undefined') return () => {};
       let handle = 0;
       const refresh = () => {
@@ -971,6 +1047,9 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
         if (!stale) return;
         markChatMain();
         applyAlphas();
+        // 切会话时官方会重写 body 上的 token 快照，我们的覆盖层随之失效（表现就是
+        // “本来不透明的面突然透了，打开设置页又好了”）。这里顺手重下一遍。
+        if (typeof onRebuild === 'function') onRebuild();
       };
       const schedule = () => {
         if (handle !== 0) return;
@@ -1028,8 +1107,49 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
      * 把当前外观写进主题快照：品牌色阶 + 各个表面的覆盖色。
      * 什么都没改时不留覆盖层，默认态和官方像素级一致。
      */
-    function applyLook(theme) {
-      if (theme === null || theme === undefined) return null;
+    const TOKEN_STYLE_ID = STYLE_ID + '-tokens';
+
+    /**
+     * token 覆盖写进我们自己的一张样式表，并且带 `!important`。
+     * 原因：官方每次切换会话都会重写 body 上的 token 快照（普通内联），而经 ui-theme 下发的覆盖层
+     * 会被它顶掉——表现就是“本来不透明的面突然透了，打开设置页又好了”。
+     * `!important` 的声明能压过普通内联，且深浅两套各一条规则，主题切换照样跟。
+     */
+    function applyTokenOverrides(overrides) {
+      if (typeof document === 'undefined') return () => {};
+      const existing = document.querySelector('style[data-plugin-css="' + TOKEN_STYLE_ID + '"]');
+      if (Object.keys(overrides).length === 0) {
+        if (existing !== null) existing.remove();
+        return () => {};
+      }
+      const light = [];
+      const dark = [];
+      for (const [name, pair] of Object.entries(overrides)) {
+        if (typeof pair?.light === 'string') light.push(name + ':' + pair.light + '!important');
+        if (typeof pair?.dark === 'string') dark.push(name + ':' + pair.dark + '!important');
+      }
+      const css = (light.length === 0 ? '' : 'body{' + light.join(';') + '}\n')
+        + (dark.length === 0 ? '' : 'body[data-ds-dark-theme]{' + dark.join(';') + '}');
+      let tag = existing;
+      if (tag === null) {
+        tag = document.createElement('style');
+        tag.setAttribute('data-plugin-css', TOKEN_STYLE_ID);
+        document.head.appendChild(tag);
+      }
+      tag.textContent = css;
+      return () => {
+        if (tag !== null) tag.remove();
+      };
+    }
+
+    /** 内容类面的默认值：follow 打开时混入 10% 品牌色，关着就是官方中性色。 */
+    function fallbackFor(surface, scheme, follow) {
+      const base = surface.fallback[scheme];
+      if (follow !== true) return base;
+      return 'color-mix(in srgb,var(--dsw-static-deepseek-400) 10%,' + base + ')';
+    }
+
+    function applyLook() {
       const overrides = {};
       const scale = deriveScale(look.seed);
       if (String(look.seed).toLowerCase() !== DEFAULT_SEED && scale !== null) {
@@ -1040,36 +1160,38 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
         // pane 类的透明度由 PANE_RULES 负责（官方那条 40% 写死在规则里），
         // 其余的把透明度直接折进 token 值，官方每个地方读到的都是半透明色。
         const alpha = surface.pane === true ? null : (look.alphas[surface.id] ?? null);
-        if (user === null && alpha === null) continue;
+        const follow = surface.follow === true && look.follow === true;
+        if (user === null && alpha === null && !follow) continue;
         for (const token of surface.tokens) {
           overrides[token] = {
-            light: withAlpha(user ?? surface.fallback.light, alpha),
-            dark: withAlpha(user ?? surface.fallback.dark, alpha),
+            light: withAlpha(user ?? fallbackFor(surface, 'light', follow), alpha),
+            dark: withAlpha(user ?? fallbackFor(surface, 'dark', follow), alpha),
           };
         }
       }
-      if (Object.keys(overrides).length === 0) return null;
-      try {
-        return theme.overrideTokens(PALETTE_SOURCE, overrides);
-      } catch (error) {
-        console.warn('[ygelon] appearance override failed', error);
-        return null;
-      }
+      return applyTokenOverrides(overrides);
     }
 
     const PALETTE_CSS = `
 .ys-pal{font-size:13px;line-height:20px;padding:4px 0}
 .ys-pal h3{margin:0 0 4px;font-size:15px;font-weight:600}
+.ys-pal-ver{margin-left:7px;color:var(--dsw-alias-label-tertiary);font-size:10px;font-weight:400;letter-spacing:.04em}
 .ys-pal h4{margin:18px 0 8px;font-size:13px;font-weight:600}
 .ys-pal-desc{margin:0 0 12px;color:var(--dsw-alias-label-secondary)}
 .ys-pal-section{margin:0 0 6px;color:var(--dsw-alias-label-tertiary);font-size:11px}
+.ys-pal-toggle{display:inline-flex;align-items:center;gap:7px;margin:0 0 12px;color:var(--dsw-alias-label-secondary);font-size:12px;cursor:pointer}
+.ys-pal-toggle input{margin:0;accent-color:var(--dsw-alias-state-business-primary)}
 .ys-pal-groups{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
 .ys-pal-group .ys-pal-section{margin:0 0 6px}
-.ys-pal-targets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.ys-pal-targets{display:flex;flex-direction:column;gap:1px;margin-bottom:12px}
 .ys-pal-group .ys-pal-targets{margin-bottom:0}
-.ys-pal-target{padding:0 9px;height:26px;border-radius:999px;border:1px solid var(--dsw-alias-border-l4);background:0 0;color:var(--dsw-alias-label-secondary);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-.ys-pal-target[data-active=true]{border-color:var(--dsw-alias-label-primary);color:var(--dsw-alias-label-primary)}
-.ys-pal-target i{display:block;width:11px;height:11px;border-radius:3px;border:1px solid var(--dsw-alias-border-l3)}
+.ys-pal-target{display:flex;align-items:baseline;gap:8px;width:100%;padding:5px 7px;border:0;border-radius:7px;background:0 0;color:var(--dsw-alias-label-secondary);font-size:12px;text-align:left;cursor:pointer}
+.ys-pal-target:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.ys-pal-target[data-active=true]{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 12%,transparent);color:var(--dsw-alias-label-primary)}
+.ys-pal-target i{flex:none;align-self:center;display:block;width:11px;height:11px;border-radius:3px;border:1px solid var(--dsw-alias-border-l3)}
+.ys-pal-targetName{flex:none;min-width:108px;white-space:nowrap}
+.ys-pal-targetHint{flex:1;min-width:0;color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px}
+.ys-pal-editor{margin:2px 0 8px;padding:8px 9px 10px;border-radius:9px;background:color-mix(in srgb,var(--dsw-alias-label-primary) 4%,transparent)}
 .ys-pal-current{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .ys-pal-dot{width:24px;height:24px;border-radius:8px;border:1px solid var(--dsw-alias-border-l3)}
 .ys-pal-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--dsw-alias-label-tertiary)}
@@ -1107,7 +1229,8 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
     // 色域图：横向是色相（一整条彩虹），纵向是亮度，彩度取该点能到的最浓值
     // 再乘浓度带上选的比例 —— 所以一张图里同时有红橙黄绿蓝紫和深浅。
     const PLANE_L_TOP = 0.99;
-    const PLANE_L_BOTTOM = 0.12;
+    // 下端给到 0.02：这样把浓度带拖到最左（彩度 0）时，纵轴底就是纯黑，能选出黑/灰/白的完整灰阶。
+    const PLANE_L_BOTTOM = 0.02;
 
     /** 某个颜色的 hex，用于回显和 favicon。 */
     function colorHex(value) {
@@ -1200,7 +1323,7 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
         const observer = new ResizeObserver(measure);
         observer.observe(plane);
         return () => observer.disconnect();
-      }, []);
+      }, [target]);
 
       // 逐像素画：按 2×2 块取一次色域边界，够快也够平滑。
       React.useEffect(() => {
@@ -1232,7 +1355,7 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
           }
         }
         context.putImageData(image, 0, 0);
-      }, [satRatio, width]);
+      }, [satRatio, width, target]);
 
       const hex = colorHex(editing);
       const markX = clamp(current.H / 360, 0, 1);
@@ -1249,7 +1372,7 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
         ? target
         : null;
       const alphaOnly = targetDef.alphaOnly === true;
-      const alphaDefault = alphaKey === 'sidebar' ? 40 : 100;
+      const alphaDefault = alphaKey === null ? 100 : (ALPHA_DEFAULT[alphaKey] ?? 100);
       const alphaValue = alphaKey === null
         ? 100
         : (typeof state.alphas[alphaKey] === 'number' ? state.alphas[alphaKey] : alphaDefault);
@@ -1289,36 +1412,9 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
         ),
       );
 
-      const targets = TARGETS.map((item) => ({
-        id: item.id,
-        label: t(item.labelKey),
-        color: targetEditingColor(item.id),
-      }));
-
-      return h('div', { className: 'ys-pal' },
-        h('h3', null, t('look.title')),
-        h('p', { className: 'ys-pal-desc' }, t('look.desc')),
-
-        h('div', { className: 'ys-pal-groups' }, TARGET_GROUPS.map((group) => {
-          const items = targets
-            .filter((item) => (GROUP_OF[item.id] ?? 'chat') === group.id)
-            .sort((a, b) => TARGET_ORDER.indexOf(a.id) - TARGET_ORDER.indexOf(b.id));
-          if (items.length === 0) return null;
-          return h('div', { key: group.id, className: 'ys-pal-group' },
-            h('p', { className: 'ys-pal-section' }, t(group.labelKey)),
-            h('div', { className: 'ys-pal-targets' }, items.map((item) => h('button', {
-              key: item.id,
-              type: 'button',
-              className: 'ys-pal-target',
-              'data-active': item.id === target ? 'true' : 'false',
-              onClick: () => setTarget(item.id),
-            },
-              h('i', { style: { background: colorHex(item.color) } }),
-              item.label,
-            ))));
-        })),
-
-        alphaOnly ? h('p', { className: 'ys-pal-code' }, t('look.seatHint')) : colorBlocks,
+      // 每个目标自己的展开区：色域图 + 色值 + 浓度 + 透明度 + 恢复这一项（+ 主色的派生色阶）。
+      const editor = h('div', { className: 'ys-pal-editor' },
+        alphaOnly ? null : colorBlocks,
         alphaKey === null ? null : h('label', { className: 'ys-pal-alpha' },
           h('span', null, t('look.alpha')),
           h('input', {
@@ -1368,6 +1464,48 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
           }))),
           h('div', { className: 'ys-pal-steps' }, BRAND_STEPS.map(([step]) => h('span', { key: step }, String(step)))),
         ) : null,
+
+      );
+
+      const targets = TARGETS.map((item) => ({
+        id: item.id,
+        label: t(item.labelKey),
+        color: targetEditingColor(item.id),
+      }));
+
+      return h('div', { className: 'ys-pal' },
+        h('h3', null, t('look.title'), h('span', { className: 'ys-pal-ver' }, 'r4')),
+        h('p', { className: 'ys-pal-desc' }, t('look.desc')),
+        h('label', { className: 'ys-pal-toggle' },
+          h('input', {
+            type: 'checkbox',
+            checked: state.follow === true,
+            onChange: (event) => setLook({ follow: event.target.checked }),
+          }),
+          h('span', null, t('look.follow')),
+        ),
+
+        h('div', { className: 'ys-pal-groups' }, TARGET_GROUPS.map((group) => {
+          const items = targets
+            .filter((item) => (GROUP_OF[item.id] ?? 'chat') === group.id)
+            .sort((a, b) => TARGET_ORDER.indexOf(a.id) - TARGET_ORDER.indexOf(b.id));
+          if (items.length === 0) return null;
+          return h('div', { key: group.id, className: 'ys-pal-group' },
+            h('p', { className: 'ys-pal-section' }, t(group.labelKey)),
+            h('div', { className: 'ys-pal-targets' }, items.map((item) => h(React.Fragment, { key: item.id },
+              h('button', {
+                type: 'button',
+                className: 'ys-pal-target',
+                'data-active': item.id === target ? 'true' : 'false',
+                onClick: () => setTarget(item.id === target ? null : item.id),
+              },
+                h('i', { style: { background: colorHex(item.color) } }),
+                h('span', { className: 'ys-pal-targetName' }, item.label),
+                h('span', { className: 'ys-pal-targetHint' }, t('look.hint.' + item.id)),
+              ),
+              item.id === target ? editor : null,
+            ))));
+        })),
 
         h('h4', null, t('look.brand')),
         h('label', { className: 'ys-pal-field' },
@@ -1467,6 +1605,23 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
           };
           setVar('--ys-row-icon', 'data-ys-row-icon', plain('rowIconColor'));
           setVar('--ys-code-banner', 'data-ys-code-banner', tinted('codeBanner', 'codeBannerColor'));
+          setVar('--ys-deliverable', 'data-ys-deliverable', tinted('deliverable', 'deliverableColor'));
+          /** 一组变量共用一个开关：任一有值才开。 */
+          const setGroup = (flag, entries) => {
+            let any = false;
+            for (const entry of entries) {
+              const value = tinted(entry[1], entry[2]);
+              if (value !== null) {
+                root.style.setProperty(entry[0], value);
+                any = true;
+              } else {
+                root.style.removeProperty(entry[0]);
+              }
+            }
+            if (any) root.setAttribute(flag, '');
+            else root.removeAttribute(flag);
+          };
+          setGroup('data-ys-sidebar-shadow', [['--ys-sidebar-shadow', 'sidebarShadow', 'sidebarShadowColor']]);
           setVar('--ys-changes-head', 'data-ys-changes-head', tinted('changesHead', 'changesHeadColor'));
           setVar('--ys-changes-row', 'data-ys-changes-row', tinted('changesRow', 'changesRowColor'));
         };
@@ -1483,12 +1638,23 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
           toggle('code', 'data-ys-code-block');
         };
 
+        /** 只重建 token 覆盖 + 自有变量，不动标题/favicon/标语。 */
+        const reapplyTheme = () => {
+          if (disposeLook !== null) {
+            try { disposeLook(); } catch { /* layer already replaced */ }
+            disposeLook = null;
+          }
+          disposeLook = applyLook();
+          applySurfaceFlags();
+          applyPaintVars();
+        };
+
         const applyNow = () => {
           if (disposeLook !== null) {
             try { disposeLook(); } catch { /* layer already replaced */ }
             disposeLook = null;
           }
-          disposeLook = applyLook(themeRef);
+          disposeLook = applyLook();
           applySurfaceFlags();
           applyPaintVars();
           applyAlphas();
@@ -1512,22 +1678,21 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
         });
 
         // 会话切换后重新定位对话区背景层，否则透明度只活到第一次切会话。
-        ctx.effect(() => watchChatLayers());
+        ctx.effect(() => watchChatLayers(reapplyTheme));
 
         // theme 由 ui-theme 提供：色阶覆盖走官方快照，ui-layout 会把它
         // 写成 body 的内联变量，优先级压过内置样式表。
-        ctx.inject(['theme'], (themeCtx) => {
-          themeRef = themeCtx.get('theme') ?? null;
-          lookListeners.add(applyNow);
-          ctx.effect(() => () => {
-            lookListeners.delete(applyNow);
-            if (disposeLook !== null) {
-              try { disposeLook(); } catch { /* already gone */ }
-              disposeLook = null;
-            }
-          });
-          applyNow();
+        // 覆盖层已经不走 ui-theme（自写带 !important 的样式表），所以这里不再等 theme 服务：
+        // 注入回调没跑过就会“一切都没应用”，切会话也没人补。
+        lookListeners.add(applyNow);
+        ctx.effect(() => () => {
+          lookListeners.delete(applyNow);
+          if (disposeLook !== null) {
+            try { disposeLook(); } catch { /* already gone */ }
+            disposeLook = null;
+          }
         });
+        applyNow();
 
         ctx.effect(() => ctx.slots.inject('settings.plugins.tab', () => ctx.slots.register({
           name: 'settings.plugins.tab',

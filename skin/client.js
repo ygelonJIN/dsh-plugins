@@ -42,6 +42,7 @@ window.__ModuleLoader__.load({
         'look.target.dialog': 'Composer',
         'look.target.bubble': 'Bubble',
         'look.target.code': 'Code block (body)',
+        'look.target.think': 'Reasoning block',
         'look.target.toolOutput': 'Tool output block',
         'look.target.codeBanner': 'Code block (banner)',
         'look.target.inlineCode': 'Inline code',
@@ -63,6 +64,7 @@ window.__ModuleLoader__.load({
         'look.hint.card': "First-level card: changed-files card, tool output frame, hover previews, settings panels.",
         'look.hint.nested': "Second-level raised surface: code viewer, registry dialogs, switch panels in Settings.",
         'look.hint.bubble': "The bubble of the messages you send.",
+        'look.hint.think': "The block that holds the reasoning text while the model thinks.",
         'look.hint.code': "Highlighted code blocks that have a language name (not the banner above them).",
         'look.hint.codeBanner': "The strip above a code block: language name (or “Code block”) and the copy button.",
         'look.hint.inlineCode': "The small pill for inline `code` inside running text.",
@@ -120,6 +122,7 @@ window.__ModuleLoader__.load({
         'look.target.dialog': '输入框',
         'look.target.bubble': '气泡',
         'look.target.code': '代码块（主体）',
+        'look.target.think': '思考过程',
         'look.target.toolOutput': '工具输出块',
         'look.target.codeBanner': '代码块（语言条）',
         'look.target.inlineCode': '行内代码',
@@ -141,6 +144,7 @@ window.__ModuleLoader__.load({
         'look.hint.card': "一级卡片：改动文件卡片、工具输出框、悬停预览、设置面板。",
         'look.hint.nested': "二级抬升面：代码查看器、注册表弹窗、设置里的开关面板。",
         'look.hint.bubble': "你自己发的消息气泡。",
+        'look.hint.think': "模型思考时那段推理文字所在的块。",
         'look.hint.code': "写了语言名的高亮代码块主体（不含它上面的语言条）。",
         'look.hint.codeBanner': "代码块顶部那条：语言名（或“代码块”）加复制按钮。",
         'look.hint.inlineCode': "正文里反引号包起来的那个小胶囊（`npm test` 这种）。",
@@ -211,14 +215,11 @@ window.__ModuleLoader__.load({
       // 祖先覆盖不到），只能落成 --ys-* 变量 + 带开关的 CSS 规则。
       // 代码块语言条实际是 banner 外层用 bg-base、内层 [data-code-block-banner] 自身没背景，
       // 覆盖 banner token 根本没被渲染路径读取，只能直接给那个元素上背景。
-      { id: 'codeBanner', storeKey: 'codeBannerColor', fallback: 'var(--dsw-static-neutral-bluish-50)', alpha: true },
       // 对话里交付的文件卡片（[data-presented-file]）：底色来自组件在 .root 上声明的
       // --deliverable-fill，同样祖先覆盖不到，直接给元素上背景。
       { id: 'deliverable', storeKey: 'deliverableColor', fallback: 'var(--dsw-static-neutral-50)', alpha: true },
       // 包边与阴影：几何形状写死在规则里，这里只调颜色+浓度。
       { id: 'sidebarShadow', storeKey: 'sidebarShadowColor', fallback: 'rgba(0,0,0,.12)', alpha: true },
-      { id: 'changesHead', storeKey: 'changesHeadColor', fallback: 'var(--dsw-static-neutral-50)', alpha: true },
-      { id: 'changesRow', storeKey: 'changesRowColor', fallback: 'transparent', alpha: true },
       { id: 'brandLead', storeKey: 'leadColor', fallback: 'var(--dsw-alias-label-primary)' },
       { id: 'brandTail', storeKey: 'tailColor', fallback: 'var(--dsw-alias-label-secondary)' },
     ];
@@ -228,9 +229,8 @@ window.__ModuleLoader__.load({
     // fallback: 官方浅/深两色，用户只调透明度不选色时当底色。
     // fallback 一律写**纯色**，浓度交给透明度滑条：滑条 0–100 就是 0–100%，
     // 拖满是实色。这几项原来的“出厂浓度”放在 ALPHA_DEFAULT 里当滑条默认值。
-    const ALPHA_DEFAULT = { sidebar: 40, rowOpen: 30, rowRun: 15, groupCard: 5, groupEdge: 22 };
+    const ALPHA_DEFAULT = { sidebar: 40, groupCard: 5, groupEdge: 22 };
     const LABEL_PRIMARY = 'var(--dsw-alias-label-primary)';
-    const BUSINESS = 'var(--dsw-alias-state-business-primary)';
 
     const SURFACES = [
       { id: 'sidebar', tokens: ['--dsw-specific-sidebar-fill'], pane: true, fallback: { light: '#f9fafb', dark: '#1b1b1c' } },
@@ -238,20 +238,12 @@ window.__ModuleLoader__.load({
       { id: 'card', tokens: ['--dsw-alias-bg-layer-1'], fallback: { light: '#ffffff', dark: '#232324' } },
       { id: 'nested', tokens: ['--dsw-alias-bg-layer-2'], fallback: { light: '#ffffff', dark: '#2c2c2e' } },
       { id: 'dialog', tokens: ['--dsw-specific-input-major'], fallback: { light: '#ffffff', dark: '#2c2c2e' } },
-      { id: 'bubble', tokens: ['--dsw-specific-bubble'], fallback: { light: '#edf3fe', dark: '#2c2c2e' }, follow: true },
+      // 气泡默认就带透明度（alphaDefault），不是“用户拖过才生效”：官方给的是实色，
+      // 这里按 60% 下发，玻璃感跟侧栏一致。
       // 对话区里的 Markdown 块：代码块（含顶部语言条，一起走才不割裂）和行内 code。
       // 它们跟「卡片」用的 bg-layer-1 是两套 token，所以之前调卡片对代码块无效。
       // 代码块主体：走 Shiki 自己的 --shiki-background（它默认指向 code-block），
       // 这样就不会顺带改到工具输出块——那个另开一项。
-      {
-        id: 'code',
-        tokens: ['--shiki-background'],
-        follow: true,
-        fallback: {
-          light: 'var(--dsw-static-neutral-bluish-50)',
-          dark: 'var(--dsw-static-neutral-bluish-900)',
-        },
-      },
       {
         id: 'toolOutput',
         tokens: ['--dsw-alias-markdown-code-block'],
@@ -260,12 +252,6 @@ window.__ModuleLoader__.load({
           light: 'var(--dsw-static-neutral-bluish-50)',
           dark: 'var(--dsw-static-neutral-bluish-900)',
         },
-      },
-      {
-        id: 'inlineCode',
-        tokens: ['--dsw-alias-markdown-inline-code'],
-        follow: true,
-        fallback: { light: 'var(--dsw-static-neutral-50)', dark: 'var(--dsw-static-neutral-800)' },
       },
       // 弹层底色有两层名字，必须一起写：
       //   --dsw-menu-surface-fill  → 公共菜单走 MenuSurface（账户菜单就是这个，官方 README 明确
@@ -281,10 +267,6 @@ window.__ModuleLoader__.load({
       // 这里用同一套机制覆盖（内联压过它的样式表规则），透明度照样折进值里。
       { id: 'groupCard', tokens: ['--sm-frame-fill'], fallback: { light: LABEL_PRIMARY, dark: LABEL_PRIMARY } },
       { id: 'groupEdge', tokens: ['--sm-frame'], fallback: { light: LABEL_PRIMARY, dark: LABEL_PRIMARY } },
-      // 侧栏行的两档底色（sidebar-marks 的变量，同样走 body 内联覆盖）。
-      // 「运行中」这一条同时管完成未读：那边读的是同一个 --sm-run-fill。
-      { id: 'rowOpen', tokens: ['--sm-open-fill'], fallback: { light: BUSINESS, dark: BUSINESS } },
-      { id: 'rowRun', tokens: ['--sm-run-fill'], fallback: { light: BUSINESS, dark: BUSINESS } },
       // 输入框上方的渐隐遮罩（composerSeat）：不是 token 面，只给一条透明度滑条。
       { id: 'seat', tokens: [], alphaOnly: true, fallback: { light: '#ffffff', dark: '#151517' } },
     ];
@@ -413,9 +395,9 @@ window.__ModuleLoader__.load({
     // 这里显式排一遍，保证相邻的东西（比如代码块主体/语言条）挨在一起。
     const TARGET_ORDER = [
       'seed',
-      'sidebar', 'sidebarShadow', 'rowOpen', 'rowRun', 'groupCard', 'groupEdge', 'rowIcon',
-      'base', 'card', 'nested', 'bubble',
-      'code', 'codeBanner', 'inlineCode', 'toolOutput', 'deliverable', 'changesHead', 'changesRow',
+      'sidebar', 'sidebarShadow', 'groupCard', 'groupEdge', 'rowIcon',
+      'base', 'card', 'nested', 'bubble', 'think',
+      'toolOutput', 'deliverable',
       'dialog', 'seat',
       'menu',
       'icon', 'brandLead', 'brandTail',
@@ -423,11 +405,11 @@ window.__ModuleLoader__.load({
 
     const GROUP_OF = {
       seed: 'seed',
-      sidebar: 'sidebar', sidebarShadow: 'sidebar', rowOpen: 'sidebar', rowRun: 'sidebar',
+      sidebar: 'sidebar', sidebarShadow: 'sidebar',
       groupCard: 'sidebar', groupEdge: 'sidebar', rowIcon: 'sidebar',
       base: 'chat', card: 'chat', nested: 'chat', bubble: 'chat',
-      code: 'chat', codeBanner: 'chat', inlineCode: 'chat', toolOutput: 'chat',
-      deliverable: 'chat', changesHead: 'chat', changesRow: 'chat',
+      toolOutput: 'chat',
+      deliverable: 'chat',
       dialog: 'input', seat: 'input',
       menu: 'overlay',
       icon: 'brand', brandLead: 'brand', brandTail: 'brand',
@@ -907,15 +889,22 @@ html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="co
     // 挪到上方只需改回 order:-1 并把圆角/描边翻面。
     // 颜色和透明度直接吃 --dsw-specific-input-major，也就是外观页「输入框」那一项
     // （ui-layout 会把覆盖写成 body 内联变量），所以调输入框就一起变，不需要另开一项。
+    // 用户要的统一底色：20% 透明白（深色主题下是提亮，浅色主题下几乎透明）。
+    const GLASS30 = 'color-mix(in srgb,#fff 30%,transparent)';
+
     const DOCK_RULES = `
 /* 侧栏行悬停出来的动作图标（省略号 / 置顶 / 归档）与工作区行同款按钮。
    变量由 applyPaintVars 写到 html；没设时 var() 回退 currentColor，官方行为不变。 */
 /* 「已编辑文件」卡片：头行读组件自己的 --changes-fill（在 .card 上声明，祖先覆盖不到），
    文件行本身没有底色。两个都靠开关属性 + --ys-* 变量，没设时规则完全不生效。 */
-html[data-ys-changes-head] [data-changed-files][data-changed-files][data-changed-files]{
-  --changes-fill:var(--ys-changes-head);--changes-hover:var(--ys-changes-head)
+/* 卡片本体透明：不然 30% 白是叠在“卡片底色”（layer-1，浅色下就是纯白）上，
+   看起来永远是纯白 —— 用户要的是能透出后面的东西。 */
+[data-changed-files]{background-color:transparent!important}
+[data-changed-files][data-changed-files][data-changed-files]{
+  --changes-fill:${GLASS30};
+  --changes-hover:${GLASS30}
 }
-html[data-ys-changes-row] [data-changed-files] [class*="_row"]{background:var(--ys-changes-row)}
+[data-changed-files] [class*="_row"]{background:${GLASS30}}
 /* 交付文件卡片：组件把 --deliverable-fill 声明在 .root 上，祖先改不动，直接给卡片上色；
    双属性是为了压过它自己的 :hover 规则。 */
 html[data-ys-deliverable] [data-presented-file][data-presented-file]{background-color:var(--ys-deliverable)}
@@ -925,28 +914,49 @@ html[data-ys-sidebar-shadow] [class*="sidebarCol"]{box-shadow:var(--ys-sidebar-s
 /* 输入框卡片与用户消息气泡的包边/阴影，直接跟「工作区卡片」那一套共用变量：
    0 0 14px 匀影 + inset 1px 发丝描边 + 顶部 1px 白高光。没装 sidebar-marks 时
    用等价 fallback，观感一致。html 前缀是为了压过官方同名类规则。 */
-html [class*="_bubble"],
+html [class*="_bubble"]{
+  background-color:rgba(255,255,255,.65);
+  box-shadow:
+    var(--sm-frame-lift,inset 0 1px 0 rgba(255,255,255,.22)),
+    var(--sm-frame-shadow,0 0 14px rgba(0,0,0,.10)),
+    inset 0 0 0 1px var(--sm-frame,color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent))
+}
 html [class*="composerSeat"] [class*="_card"]{
   box-shadow:
     var(--sm-frame-lift,inset 0 1px 0 rgba(255,255,255,.22)),
     var(--sm-frame-shadow,0 0 14px rgba(0,0,0,.10)),
     inset 0 0 0 1px var(--sm-frame,color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent))
 }
+/* 发送按钮：官方是按钮填充色 + 固定白字，主色调白就是白底白字。这里把文字固定成黑色。 */
+/* 输入区内部的品牌色改成主题文字色：模型名、时段标签这类原本是蓝色的东西，
+   主色白时会一起变白。标签因此变成“很淡的文字色底 + 文字色文字”。 */
+html [class*="composerSeat"]{--dsw-alias-state-business-primary:var(--dsw-alias-label-primary)}
+/* 提示文字用次级文字色（官方的 caption 在 30% 白底上太淡，读不出来）。 */
+html [class*="composerSeat"] [class*="placeholder"]{color:var(--dsw-alias-label-secondary)}
+html [class*="composerSeat"] button[class*="_primary"]{
+  background-color:#fff;color:#000;box-shadow:inset 0 0 0 1.5px #000
+}
+/* 行内代码小胶囊：默认也是 20% 白。 */
+html [class*="_markdown"] :not(pre)>code{background-color:${GLASS30}}
+/* 思考过程的内容块：官方只给了 padding，没有自己的底色。 */
+[class*="thinkBody"]{background-color:transparent}
+/* 思考块整体（头部 + 内容）一块 30% 白，带圆角；:has 命中的是 thinkBody 的直接父级。 */
+:has(> [class*="thinkBody"]){background-color:${GLASS30};border-radius:12px;overflow:hidden}
 /* 输入框光标：官方写的是 caret-color: var(--dsw-alias-state-business-primary)，
    主色一旦调成白色/极浅色，光标就跟背景同色、直接看不见。这里固定成文字色。 */
 html [class*="composerSeat"] [contenteditable="true"]{caret-color:var(--dsw-alias-label-primary)}
 /* 代码块主体：有语言名时是 Shiki 的内联 style（var(--shiki-background)）；
    没语言名时渲染的是 <pre class="..._plain">，没有任何背景，露出的是容器上的 bg-base ——
    所以调「代码块（主体）」对它无效。这里用 md-code-block 这个稳定类名兜住 pre 和容器本身，
-   只在用户调过这一项（html[data-ys-code-block]）时生效。 */
-html[data-ys-code-block] [class*="md-code-block"],
-html[data-ys-code-block] [class*="md-code-block"] pre{background-color:var(--shiki-background)}
+   现在固定为 30% 白（不再读用户变量）。 */
+[class*="md-code-block"],
+[class*="md-code-block"] pre{background-color:${GLASS30}!important}
 /* 代码块语言条：真实结构是 bannerWrap（background-color: var(--dsw-alias-bg-base)）> 内层
    [data-code-block-banner]（自己常常没有背景）。只给内层上色、外层强制透明：
    两层都涂成同一个半透明色会叠出更深的一层
    （1-(1-α)² 而不是 α），头行就会比内容区明显重。 */
-html[data-ys-code-banner] :has(> [data-code-block-banner]){background-color:transparent}
-html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-code-banner)}
+:has(> [data-code-block-banner]){background-color:transparent}
+[data-code-block-banner]{background-color:${GLASS30}}
 [data-row-key] [class*="rowActions"] svg,
 [data-row-key] [class*="iconButton"] svg{color:var(--ys-row-icon,currentColor)}
 /* 贴合量放在容器上，输入卡片和 dock 都读得到；改这一个数即可。 */
@@ -1166,8 +1176,14 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
       return 'color-mix(in srgb,var(--dsw-static-deepseek-400) 10%,' + base + ')';
     }
 
+    // 与主色解耦的固定值：主色调成白色时，焦点环和链接会跟着变白、直接看不见。
+    const FIXED_OVERRIDES = {
+      '--dsw-focus-ring-color': { light: 'var(--dsw-alias-label-primary)', dark: 'var(--dsw-alias-label-primary)' },
+      '--dsw-alias-link': { light: 'var(--dsw-alias-label-primary)', dark: 'var(--dsw-alias-label-primary)' },
+    };
+
     function applyLook() {
-      const overrides = {};
+      const overrides = { ...FIXED_OVERRIDES };
       const scale = deriveScale(look.seed);
       if (String(look.seed).toLowerCase() !== DEFAULT_SEED && scale !== null) {
         Object.assign(overrides, toOverrides(scale));
@@ -1176,7 +1192,7 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
         const user = readTargetColor(surface.id);
         // pane 类的透明度由 PANE_RULES 负责（官方那条 40% 写死在规则里），
         // 其余的把透明度直接折进 token 值，官方每个地方读到的都是半透明色。
-        const alpha = surface.pane === true ? null : (look.alphas[surface.id] ?? null);
+        const alpha = surface.pane === true ? null : (look.alphas[surface.id] ?? surface.alphaDefault ?? null);
         const follow = surface.follow === true && look.follow === true;
         if (user === null && alpha === null && !follow) continue;
         for (const token of surface.tokens) {
@@ -1637,7 +1653,6 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
             return typeof color === 'string' && parseColor(color) !== null ? color : null;
           };
           setVar('--ys-row-icon', 'data-ys-row-icon', plain('rowIconColor'));
-          setVar('--ys-code-banner', 'data-ys-code-banner', tinted('codeBanner', 'codeBannerColor'));
           setVar('--ys-deliverable', 'data-ys-deliverable', tinted('deliverable', 'deliverableColor'));
           /** 一组变量共用一个开关：任一有值才开。 */
           const setGroup = (flag, entries) => {
@@ -1655,8 +1670,6 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
             else root.removeAttribute(flag);
           };
           setGroup('data-ys-sidebar-shadow', [['--ys-sidebar-shadow', 'sidebarShadow', 'sidebarShadowColor']]);
-          setVar('--ys-changes-head', 'data-ys-changes-head', tinted('changesHead', 'changesHeadColor'));
-          setVar('--ys-changes-row', 'data-ys-changes-row', tinted('changesRow', 'changesRowColor'));
         };
 
         /** 只对"需要按需接管"的面加开关属性，没设值时规则完全不生效。 */
@@ -1668,7 +1681,6 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
             if (touched) root.setAttribute(flag, '');
             else root.removeAttribute(flag);
           };
-          toggle('code', 'data-ys-code-block');
         };
 
         /** 只重建 token 覆盖 + 自有变量，不动标题/favicon/标语。 */
@@ -1727,13 +1739,8 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
         });
         applyNow();
 
-        ctx.effect(() => ctx.slots.inject('settings.plugins.tab', () => ctx.slots.register({
-          name: 'settings.plugins.tab',
-          id: 'skin-appearance',
-          order: 30,
-          label: () => translate('look.tab'),
-          locale: NS,
-        }, AppearanceTab)));
+        // 外观调节页已下线：用户已经定稿成一套主题，不需要再在设置里调。
+        // （AppearanceTab 组件保留在文件里，将来要恢复只需把这段注册加回来。）
 
         registerSlot(ctx, 'sidebar.brand.mark', Mark);
         registerSlot(ctx, 'sidebar.brand.name', Name);

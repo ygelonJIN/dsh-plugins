@@ -66,20 +66,36 @@ body{
   --sm-frame-fill:color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent);
   --sm-frame-shadow:0 0 14px rgba(0,0,0,.10);
   --sm-frame-lift:inset 0 1px 0 rgba(255,255,255,.22);
-  --sm-open-fill:color-mix(in srgb,var(--dsw-alias-state-business-primary) 30%,transparent);
-  --sm-run-fill:color-mix(in srgb,var(--dsw-alias-state-business-primary) 15%,transparent);
+  /* 透明白，不跟主色走：浅色/深色主题下都是同一层提亮，主色改成什么都不会串色。 */
+  --sm-open-fill:rgba(255,255,255,.65);
+  --sm-run-fill:rgba(255,255,255,.25);
 }
-[data-row-key][data-row-key][data-sm-running]:not([aria-selected=true]){background:var(--sm-run-fill,color-mix(in srgb,var(--dsw-alias-state-business-primary) 15%,transparent))}
+[data-row-key][data-row-key][data-sm-running]:not([aria-selected=true]){background:var(--sm-run-fill,rgba(255,255,255,.3))}
 /* 跑完还没看（官方 completionUnread → 状态点 data-state=done）的会话行同色同浓度。
    注意 StateDot 只有 ongoing 是 svg，done/idle/warning 都是 span，所以这里不能写 svg[...]。 */
-[data-row-key^=session][data-row-key][data-row-key]:not([aria-selected=true]):has([data-state=done]){background:var(--sm-run-fill,color-mix(in srgb,var(--dsw-alias-state-business-primary) 15%,transparent))}
-[data-row-key][data-sm-running]:not([data-sm-mark]) [data-sm-title]{color:var(--dsw-alias-state-business-primary);font-weight:600}
-[data-row-key][data-sm-running][data-sm-mark] [data-sm-title]{font-weight:600}
+[data-row-key^=session][data-row-key][data-row-key]:not([aria-selected=true]):has([data-state=done]){background:var(--sm-run-fill,rgba(255,255,255,.3))}
+/* 运行行只加粗，不改颜色：主色调成白色时标题会变白、在浅底上看不清。 */
+[data-row-key][data-sm-running] [data-sm-title]{font-weight:600}
 [data-row-key][data-sm-mark] [data-sm-title]{text-decoration:underline;text-decoration-color:#000;text-decoration-thickness:2px;text-underline-offset:3px}
-[data-row-key][data-row-key][aria-selected=true]{background:var(--sm-open-fill,color-mix(in srgb,var(--dsw-alias-state-business-primary) 30%,transparent))}
-[data-row-key][data-row-key][aria-selected=true] [data-sm-title]{color:var(--dsw-alias-label-primary);font-weight:700}
-[data-row-key^=session] svg[data-state=ongoing]{color:var(--dsw-alias-state-business-primary);transform:scale(1.25)}
-.sm-run{display:inline-flex;align-items:center;gap:2px;height:20px;flex:none;color:var(--dsw-alias-state-business-primary)}
+/* 选中行只改底色：标题颜色、字重、转圈、运行数字都保持平时那样（用户明确要求“字体颜色不要变”）。 */
+[data-row-key][data-row-key][aria-selected=true]{background:var(--sm-open-fill,rgba(255,255,255,.3))}
+[data-row-key^=session] svg[data-state=ongoing]{color:var(--dsw-alias-label-primary);transform:scale(1.25)}
+.sm-run{display:inline-flex;align-items:center;gap:2px;height:20px;flex:none;color:var(--dsw-alias-label-primary)}
+/* 工作区行的文件夹图标（含当前工作区那份 folderActive）也用文字色，别跟主色跑。 */
+[data-row-key^="workspace:"] [class*="_folder"],
+[data-row-key^="workspace:"] [class*="_chevron"]{color:var(--dsw-alias-label-primary)}
+/* 选中/运行状态下标题都用主题文字色，不因状态变浅。 */
+/* 选中 / 运行中 / 跑完没看：标题统一加深加粗，整行只有底色不同。 */
+[data-row-key][aria-selected=true] [data-sm-title],
+[data-row-key][data-sm-running] [data-sm-title],
+[data-row-key^=session]:has([data-state=done]) [data-sm-title]{
+  color:var(--dsw-alias-label-primary);font-weight:700
+}
+[data-row-key][aria-selected=true],
+[data-row-key][aria-selected=true] [class*="_time"],
+[data-row-key^=session]:has([data-state=done]) [class*="_time"]{
+  color:var(--dsw-alias-label-primary)
+}
 .sm-run svg{display:block}
 .sm-run-count{font-size:11px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;color:currentColor}
 .sm-spin-motion{transform-origin:center;animation:sm-spin-rotate 1.2s linear infinite}

@@ -44,6 +44,11 @@ const PURGE_ROUTE = '/api/session-delete.purge';
 const STARTUP_PURGE_DELAY_MS = 100;
 const STOP_SETTLE_ATTEMPTS = 3;
 const STOP_SETTLE_DELAY_MS = 100;
+// An idle Agent is released, then polled: the registry entry clears only after
+// its scope unwinds, and a client may resume the Session again mid-way.
+const RELEASE_ROUNDS = 3;
+const RELEASE_POLL_ATTEMPTS = 50;
+const RELEASE_POLL_DELAY_MS = 20;
 
 class SessionDeleteError extends Error {
   constructor(status, code, message, details) {
@@ -150,35 +155,43 @@ function delay(ms) {
  *   pending queue records why the files must wait for the next Host start.
  */
 async function releaseIdleAgent(ctx, sessionId) {
-  const agent = ctx.agents.get(sessionId);
-  if (agent === undefined) return { ok: true, reason: 'none' };
-  if (agent.status === 'running') return { ok: false, reason: 'running' };
-  if ((agent.inbox?.nextTurn?.length ?? 0) > 0 || (agent.inbox?.nextStep?.length ?? 0) > 0) {
-    return { ok: false, reason: 'inbox' };
+  let reason = 'none';
+  // A client can resume the Session right after the release (the fork view, a
+  // restored archived row), which registers a fresh Agent under the same id.
+  // Disposing that one too is what makes the immediate delete reliable, so the
+  // whole attempt repeats a few times before giving up.
+  for (let round = 0; round < RELEASE_ROUNDS; round += 1) {
+    const agent = ctx.agents.get(sessionId);
+    if (agent === undefined) return { ok: true, reason: 'none' };
+    if (agent.status === 'running') return { ok: false, reason: 'running' };
+    if ((agent.inbox?.nextTurn?.length ?? 0) > 0 || (agent.inbox?.nextStep?.length ?? 0) > 0) {
+      return { ok: false, reason: 'inbox' };
+    }
+    // `scope.dispose` quiesces the scope fiber including its async teardown;
+    // `rawDispose` is the bare disposer kept for a scope built without the
+    // wrapper. Neither is a documented seam, so both are tried and the queue
+    // records which one was missing.
+    const scope = agent.scope;
+    const dispose = typeof scope?.dispose === 'function'
+      ? scope.dispose.bind(scope)
+      : scope?.rawDispose;
+    if (typeof dispose !== 'function') return { ok: false, reason: 'no-dispose' };
+    try {
+      await dispose();
+    } catch (error) {
+      const message = messageOf(error);
+      console.warn('[session-delete] releasing idle Agent failed for', sessionId, ':', message);
+      if (reason === 'none') reason = `dispose-threw: ${message}`;
+    }
+    // The teardown closes the write handle asynchronously; the registry entry
+    // disappears only after the Agent's own scope unwinds.
+    for (let attempt = 0; attempt < RELEASE_POLL_ATTEMPTS; attempt += 1) {
+      if (ctx.agents.get(sessionId) === undefined) return { ok: true, reason: 'none' };
+      await delay(RELEASE_POLL_DELAY_MS);
+    }
+    if (reason === 'none') reason = 'still-registered';
   }
-  // `scope.dispose` quiesces the scope fiber including its async teardown;
-  // `rawDispose` is the bare disposer kept for a scope built without the
-  // wrapper. Neither is a documented seam, so both are tried and the caller
-  // records which one was missing.
-  const scope = agent.scope;
-  const dispose = typeof scope?.dispose === 'function'
-    ? scope.dispose.bind(scope)
-    : scope?.rawDispose;
-  if (typeof dispose !== 'function') return { ok: false, reason: 'no-dispose' };
-  try {
-    await dispose();
-  } catch (error) {
-    // The teardown may still have untracked the Agent; the poll below decides.
-    if (ctx.agents.get(sessionId) === undefined) return { ok: true, reason: 'none' };
-    const message = messageOf(error);
-    console.warn('[session-delete] releasing idle Agent failed for', sessionId, ':', message);
-    return { ok: false, reason: `dispose-threw: ${message}` };
-  }
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    if (ctx.agents.get(sessionId) === undefined) return { ok: true, reason: 'none' };
-    await delay(20);
-  }
-  return { ok: false, reason: 'still-registered' };
+  return { ok: false, reason };
 }
 
 async function releaseHandles(handles) {

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "System prompt text",
+    "description": "A Settings → Plugins tab to edit a custom text block prepended to the system prompt, with an on/off switch. The text and switch state live in the directory named by config.dir."
+  }
+}

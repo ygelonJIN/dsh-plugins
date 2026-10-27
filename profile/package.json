@@ -1,0 +1,35 @@
+{
+  "name": "dsh-profile-desktop",
+  "private": true,
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "@deepseek-ai/dsh-experimental-inspector-profile",
+        "@local/usage-cost",
+        "@local/harness-period",
+        "@local/skin",
+        "@local/session-delete",
+        "@local/session-undo",
+        "@local/sidebar-marks",
+        "@local/self-check",
+        "@local/prompt-inject",
+        "@local/workspace-ledger",
+        "@local/approval-alert"
+      ]
+    }
+  },
+  "dependencies": {
+    "@local/approval-alert": "link:{{REPO}}/approval-alert",
+    "@local/harness-period": "link:{{REPO}}/harness-period",
+    "@local/self-check": "link:{{REPO}}/self-check",
+    "@local/session-delete": "link:{{REPO}}/session-delete",
+    "@local/session-undo": "link:{{REPO}}/session-undo",
+    "@local/sidebar-marks": "link:{{REPO}}/sidebar-marks",
+    "@local/skin": "link:{{REPO}}/skin",
+    "@local/usage-cost": "link:{{REPO}}/usage-cost",
+    "@local/workspace-ledger": "link:{{REPO}}/workspace-ledger",
+    "@local/prompt-inject": "link:{{REPO}}/prompt-inject"
+  }
+}

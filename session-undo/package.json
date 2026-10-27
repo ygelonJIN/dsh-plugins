@@ -1,6 +1,6 @@
 {
   "name": "@local/session-undo",
-  "version": "0.7.0",
+  "version": "0.7.2",
   "private": true,
   "type": "module",
   "description": "Undo a turn and everything after it: fork the conversation at the cut, put the undone message back in the composer, clear an inherited goal, and archive the old session for deletion. Files are never changed.",

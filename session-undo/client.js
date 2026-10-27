@@ -217,10 +217,19 @@ window.__ModuleLoader__.load({
               increaseTitle: false,
             });
             await openSession(childId);
+            // The fork seed copies the prefix *and its pending inbox*, so a
+            // message queued in the old conversation lands here and runs by
+            // itself — a queued `/goal …` command would even create the goal
+            // again. The queue belongs to the undone tail: drop it, the restored
+            // draft already carries the text.
+            // Every cleanup is optional: a missing seam must never cost the
+            // user the restored message. The fork already happened, so the run
+            // continues even when one of these steps is unavailable.
+            try { await props.dropInheritedQueue?.(childId); } catch { /* keep going */ }
             // The fork copies the prefix, so an inherited goal would restart its
             // rounds in the child: clear it before anything else touches the new
             // conversation.
-            await props.clearGoal(childId);
+            try { await props.clearGoal?.(childId); } catch { /* keep going */ }
             const injected = await props.applyDraft(childId, prompt);
             if (injected !== true) writeDraft(childId, prompt);
           } else {
@@ -337,6 +346,7 @@ window.__ModuleLoader__.load({
         startSession: props.services.startSession,
         refreshSessions: props.services.refreshSessions,
         clearGoal: props.services.clearGoal,
+        dropInheritedQueue: props.services.dropInheritedQueue,
         applyDraft: props.services.applyDraft,
         isCurrentSession: props.services.isCurrentSession,
       });
@@ -532,14 +542,48 @@ window.__ModuleLoader__.load({
               return false;
             },
             isCurrentSession: (sessionId) => mainSessionId(ctx) === sessionId,
+            dropInheritedQueue: async (sessionId) => {
+              // The fork seed copies the prefix events *and* the pending inbox,
+              // so a queued message from the undone tail arrives in the child
+              // and runs there by itself; a queued `/goal …` command would even
+              // create the goal again. Queue removal is the official seam the
+              // queue dock uses.
+              for (let attempt = 0; attempt < 20; attempt += 1) {
+                try {
+                  const binding = ctx.sessions.binding(sessionId);
+                  const inbox = binding?.session?.projections?.faceOf?.('inbox')?.getSnapshot?.();
+                  if (binding !== undefined && inbox !== undefined) {
+                    const items = [...(inbox['next-turn'] ?? []), ...(inbox['next-step'] ?? [])]
+                      .filter((item) => typeof item?.id === 'string');
+                    if (items.length === 0) return true;
+                    const conversation = ctx.sessions.scope?.(sessionId)?.get?.('conversation');
+                    if (typeof conversation?.updateQueue === 'function') {
+                      for (const item of items) {
+                        try {
+                          await conversation.updateQueue(item.id, { kind: 'remove' });
+                        } catch {
+                          // A queue item that already ran cannot be removed.
+                        }
+                      }
+                      return true;
+                    }
+                  }
+                } catch {
+                  // Retry while the binding or the scoped conversation mounts.
+                }
+                await delay(100);
+              }
+              return false;
+            },
             clearGoal: async (sessionId) => {
               try {
                 for (let attempt = 0; attempt < 20; attempt += 1) {
                   const goal = ctx.sessions.binding(sessionId)?.session.projections.faceOf('goal')?.getSnapshot()?.goal;
                   if (goal !== undefined && goal !== null) {
-                    if (goal.phase !== 'complete') {
-                      await ctx.remote.goals.clear(sessionId, { id: goal.id, revision: goal.revision });
-                    }
+                    // Any goal here came from before the cut: the child has no
+                    // turns of its own yet. A completed one is cleared too,
+                    // otherwise the goal bar keeps the undone objective.
+                    await ctx.remote.goals.clear(sessionId, { id: goal.id, revision: goal.revision });
                     return;
                   }
                   await delay(100);

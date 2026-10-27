@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Self-check page: one settings tab that lists every @local plugin's last upgrade self-check (which official anchor changed, and what stopped working).",
+  "description": "Self-check page plus a startup roster check: one settings tab lists every @local plugin's last upgrade self-check, and a corner notice appears after a DSH upgrade or when a plugin did not load.",
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
@@ -28,5 +28,8 @@
         "@deepseek-ai/dsh-client-ui-settings-plugins"
       ]
     }
+  },
+  "scripts": {
+    "test": "node test/watch.test.mjs"
   }
 }

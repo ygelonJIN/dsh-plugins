@@ -687,10 +687,18 @@ window.__ModuleLoader__.load({
       const run = () => {
         runs += 1;
         const misses = [];
+        const unchecked = [];
         for (const check of checks) {
           let ok = false;
           try { ok = check.probe() === true; } catch { ok = false; }
-          if (!ok) misses.push(check);
+          if (ok) continue;
+          // optional = 随内容出现的块（气泡、命令块、交付文件…）。启动时历史还没渲染完、
+          // 或者这个会话根本没有这种内容，都会找不到；那不算官方锚点变了。
+          if (check.optional === true) {
+            unchecked.push({ anchor: check.anchor, impact: check.impact });
+            continue;
+          }
+          misses.push(check);
         }
         if (runs === 1 && misses.length === checks.length) {
           setTimeout(run, 1500); // shell not mounted yet is not a broken anchor
@@ -704,6 +712,7 @@ window.__ModuleLoader__.load({
           all[label] = {
             ok: misses.length === 0,
             misses: misses.map((m) => ({ anchor: m.anchor, impact: m.impact })),
+            unchecked,
             at: Date.now(),
           };
           localStorage.setItem(key, JSON.stringify(all));
@@ -1798,10 +1807,13 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
         }
 
         /** 内容类锚点只在有消息时才算数：空白会话里这些元素本来就不存在。 */
-        const whenChat = (selector) => () => {
-          if (document.querySelector('[data-chat-turn]') === null) return true;
-          return document.querySelector(selector) !== null;
-        };
+        const whenChat = (selector) => ({
+          optional: true,
+          probe: () => {
+            if (document.querySelector('[data-chat-turn]') === null) return true;
+            return document.querySelector(selector) !== null;
+          },
+        });
 
         selfCheck('ygelon', [
           {
@@ -1837,47 +1849,47 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
           {
             anchor: '消息气泡 [class*="_bubble"]',
             impact: '气泡的 65% 白与包边阴影失效',
-            probe: whenChat('[class*="_bubble"]'),
+            ...whenChat('[class*="_bubble"]'),
           },
           {
             anchor: '思考块 [data-variant="think"]',
             impact: '思考块的 30% 白与圆角失效',
-            probe: whenChat('[data-variant="think"]'),
+            ...whenChat('[data-variant="think"]'),
           },
           {
             anchor: '工具行 [data-tool][data-state]',
             impact: '工具行的透明底与描边失效',
-            probe: whenChat('[data-tool][data-state]'),
+            ...whenChat('[data-tool][data-state]'),
           },
           {
             anchor: '命令块 [class*="_command_"]',
             impact: '执行命令块的 30% 白与圆角失效（local 名或结构变了）',
-            probe: whenChat('[class*="_command_"]'),
+            ...whenChat('[class*="_command_"]'),
           },
           {
             anchor: '代码块 [class*="md-code-block"]',
             impact: '代码块主体/语言条的 30% 白失效',
-            probe: whenChat('[class*="md-code-block"]'),
+            ...whenChat('[class*="md-code-block"]'),
           },
           {
             anchor: '代码块语言条 [data-code-block-banner]',
             impact: '语言条不再单独上色',
-            probe: whenChat('[data-code-block-banner]'),
+            ...whenChat('[data-code-block-banner]'),
           },
           {
             anchor: '已编辑文件 [data-changed-files]',
             impact: '已编辑文件的头/身配色失效',
-            probe: whenChat('[data-changed-files]'),
+            ...whenChat('[data-changed-files]'),
           },
           {
             anchor: '交付文件 [data-presented-file]',
             impact: '交付文件的底色接管失效',
-            probe: whenChat('[data-presented-file]'),
+            ...whenChat('[data-presented-file]'),
           },
           {
             anchor: '行内代码 [class*="_markdown"] code',
             impact: '行内代码的 30% 白失效',
-            probe: whenChat('[class*="_markdown"] :not(pre) > code'),
+            ...whenChat('[class*="_markdown"] :not(pre) > code'),
           },
           {
             anchor: '侧栏列 [class*="sidebarCol"]',

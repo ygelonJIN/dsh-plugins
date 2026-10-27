@@ -1,0 +1,10 @@
+# 系统提示文本：宿主半 + 设置页里的「系统提示」页签。
+#
+# 全部读写都落在 DSH_HOME（默认 ~/.dsh）里，不碰 /Applications 里的应用包，
+# 也不需要换包、不需要解 asar、不需要重启。
+#
+#   <DSH_HOME>/prompt-inject.md          提示词正文（可直接用编辑器改）
+#   <DSH_HOME>/prompt-inject-onoff.json  开关状态 { "enabled": true }
+- insert:
+    - id: prompt-inject
+      name: '@local/prompt-inject'

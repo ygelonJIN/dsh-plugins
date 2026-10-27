@@ -1,6 +1,6 @@
 {
   "name": "@local/session-delete",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "private": true,
   "type": "module",
   "description": "Delete a conversation permanently from the session menu: confirmed, guarded by the Host, queued across restarts when still in use, and cleans Workspace/archive/pin records.",

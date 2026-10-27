@@ -842,7 +842,8 @@ window.__ModuleLoader__.load({
         if (inside) low = mid;
         else high = mid;
       }
-      return low;
+      // 留 4% 余量：贴着色域边界时某个通道会被夹到 0/1，色相就会偏（黄变橙、橙变红）。
+      return low * 0.96;
     }
 
     /** 主色统一解析成 OKLCH：既收 '#rrggbb'，也收派生出来的 'oklch(…)'。 */
@@ -900,10 +901,10 @@ html[data-ys-seat][data-platform=darwin] [data-phase=active] [class*="composerSe
 html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="composerSeat"]{background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-alias-bg-base) 0%,transparent) 0px,color-mix(in srgb,var(--dsw-alias-bg-base) var(--ys-seat-alpha,100%),transparent) 36px)}
 `;
 
-    // 输入框那排信息（插件 pill、上下文条）原来是散着的，整体包成一张卡片，
-    // 放在输入卡片**下方**（InputBar 是 column flex，order:0 即官方位置）。
-    // 形状像“从输入框里长出来”：宽度自适应内容、顶边贴着输入卡片、只留下方两个圆角，
-    // 顶部两角用 radial-gradient 伪元素画成反向圆弧。挪到上方只需改回 order:-1 并把上下翻转。
+    // 输入框那排信息（插件 pill、上下文条）不再做成独立小卡片，而是**并进输入框**：
+    // 与输入卡片同宽、同底色、左右下三边同一条发丝描边、只留底部两个大圆角，
+    // 并把输入卡片的下圆角收平 —— 两截拼起来就是“一个整的圆角框，下半部分装这排信息”。
+    // 挪到上方只需改回 order:-1 并把圆角/描边翻面。
     // 颜色和透明度直接吃 --dsw-specific-input-major，也就是外观页「输入框」那一项
     // （ui-layout 会把覆盖写成 body 内联变量），所以调输入框就一起变，不需要另开一项。
     const DOCK_RULES = `
@@ -931,6 +932,9 @@ html [class*="composerSeat"] [class*="_card"]{
     var(--sm-frame-shadow,0 0 14px rgba(0,0,0,.10)),
     inset 0 0 0 1px var(--sm-frame,color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent))
 }
+/* 输入框光标：官方写的是 caret-color: var(--dsw-alias-state-business-primary)，
+   主色一旦调成白色/极浅色，光标就跟背景同色、直接看不见。这里固定成文字色。 */
+html [class*="composerSeat"] [contenteditable="true"]{caret-color:var(--dsw-alias-label-primary)}
 /* 代码块主体：有语言名时是 Shiki 的内联 style（var(--shiki-background)）；
    没语言名时渲染的是 <pre class="..._plain">，没有任何背景，露出的是容器上的 bg-base ——
    所以调「代码块（主体）」对它无效。这里用 md-code-block 这个稳定类名兜住 pre 和容器本身，
@@ -945,20 +949,33 @@ html[data-ys-code-banner] :has(> [data-code-block-banner]){background-color:tran
 html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-code-banner)}
 [data-row-key] [class*="rowActions"] svg,
 [data-row-key] [class*="iconButton"] svg{color:var(--ys-row-icon,currentColor)}
+/* 贴合量放在容器上，输入卡片和 dock 都读得到；改这一个数即可。 */
+html [class*="composerSeat"]{--ys-dock-lift:8px}
 [data-composer-dock]:not(:empty){
   --ys-dock-fill:var(--dsw-specific-input-major);
-  --ys-dock-radius:10px;
-  position:relative;box-sizing:border-box;width:fit-content;max-width:var(--dsh-composer-card-max-width);
-  order:0;margin:0 auto;padding:5px 12px;
+  --ys-dock-radius:var(--dsw-radius-panel);
+  --ys-dock-edge:var(--sm-frame,color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent));
+  --ys-dock-lift:8px;
+  position:relative;box-sizing:border-box;width:100%;max-width:var(--dsh-composer-card-max-width);
+  order:0;margin:calc(-1 * var(--ys-dock-lift)) auto 0;padding:0 12px 8px;
   border-radius:0 0 var(--ys-dock-radius) var(--ys-dock-radius);
-  background:var(--ys-dock-fill)
+  background-color:var(--ys-dock-fill);
+  box-shadow:inset 1px 0 0 var(--ys-dock-edge),
+    inset -1px 0 0 var(--ys-dock-edge),
+    inset 0 -1px 0 var(--ys-dock-edge)
 }
-[data-composer-dock]:not(:empty):before,
-[data-composer-dock]:not(:empty):after{
-  content:'';position:absolute;top:0;width:var(--ys-dock-radius);height:var(--ys-dock-radius)
+/* 有这排信息时，输入卡片底部两角收平，并且**去掉底边那条发丝线**：
+   描边从“四边”改成“左/右/上三边”，两截才是浑然一块，中间没有横线。 */
+html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*="_card"]{
+  border-bottom-left-radius:0;border-bottom-right-radius:0;
+  padding-bottom:var(--ys-dock-lift,8px);
+  box-shadow:
+    var(--sm-frame-lift,inset 0 1px 0 rgba(255,255,255,.22)),
+    var(--sm-frame-shadow,0 0 14px rgba(0,0,0,.10)),
+    inset 1px 0 0 var(--sm-frame,color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent)),
+    inset -1px 0 0 var(--sm-frame,color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent)),
+    inset 0 1px 0 var(--sm-frame,color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent))
 }
-[data-composer-dock]:not(:empty):before{left:calc(-1 * var(--ys-dock-radius));background:radial-gradient(circle at 0% 100%,transparent var(--ys-dock-radius),var(--ys-dock-fill) var(--ys-dock-radius))}
-[data-composer-dock]:not(:empty):after{right:calc(-1 * var(--ys-dock-radius));background:radial-gradient(circle at 100% 100%,transparent var(--ys-dock-radius),var(--ys-dock-fill) var(--ys-dock-radius))}
 `;
 
 
@@ -1203,6 +1220,8 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
 .ys-pal-mark{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgb(0 0 0 / 40%);pointer-events:none}
 .ys-pal-sat{position:relative;height:14px;border-radius:8px;cursor:crosshair;touch-action:none;border:1px solid var(--dsw-alias-border-l3);margin-bottom:14px}
 .ys-pal-sat-mark{position:absolute;top:-3px;width:5px;height:18px;margin-left:-2.5px;border-radius:3px;background:#fff;box-shadow:0 0 0 1px rgb(0 0 0 / 45%);pointer-events:none}
+.ys-pal-gray{position:relative;height:14px;border-radius:8px;cursor:crosshair;touch-action:none;border:1px solid var(--dsw-alias-border-l3);margin-bottom:14px;background-image:linear-gradient(to right,#fff,#000)}
+.ys-pal-gray-mark{position:absolute;top:-3px;width:11px;height:18px;margin-left:-5.5px;border-radius:4px;background:#fff;box-shadow:0 0 0 1px rgb(0 0 0 / 45%);pointer-events:none}
 .ys-pal-alpha{display:grid;grid-template-columns:56px 1fr 40px;align-items:center;gap:8px;margin-bottom:12px;font-size:11px;color:var(--dsw-alias-label-tertiary)}
 .ys-pal-alpha input{width:100%;margin:0;accent-color:var(--dsw-alias-state-business-primary)}
 .ys-pal-alpha b{font-weight:400;text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
@@ -1287,6 +1306,14 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
         if (rect.width === 0) return;
         const x = clamp((event.clientX - rect.left) / rect.width, 0, 1);
         pick(oklchStr(current.L, edge * x, current.H));
+      };
+
+      // 灰阶条：横向就是 白 → 黑，点哪都是无彩色（C=0），不受色相影响。
+      const pickGray = (event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        if (rect.width === 0) return;
+        const x = clamp((event.clientX - rect.left) / rect.width, 0, 1);
+        pick(oklchStr(1 - x, 0, current.H));
       };
 
       const drag = (handler) => ({
@@ -1409,6 +1436,12 @@ html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-cod
         ),
         h('div', { className: 'ys-pal-sat', style: { backgroundImage: satBar }, ...drag(pickSat) },
           h('span', { className: 'ys-pal-sat-mark', style: { left: satRatio * 100 + '%' } }),
+        ),
+        h('div', { className: 'ys-pal-gray', ...drag(pickGray) },
+          h('span', {
+            className: 'ys-pal-gray-mark',
+            style: { left: (1 - clamp(current.L, 0, 1)) * 100 + '%', background: hex },
+          }),
         ),
       );
 

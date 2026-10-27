@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Ygelon skin",
-    "description": "Ygelon skin and appearance centre: sidebar mark, empty-session mark and slogan, browser title and favicon; plus Settings → Plugins → Appearance where one draggable all-hue colour field drives the accent, sidebar/files, conversation, card, nested card, composer, bubble and the workspace stripe (one stripe for every workspace), with brand name, slogan and icon path edited in place. Client-only; disable it to restore the original."
+    "description": "Ygelon skin and appearance centre: sidebar mark, empty-session mark and slogan, browser title and favicon; plus Settings → Plugins → Appearance where one draggable all-hue colour field drives the accent, sidebar/files, conversation, card, nested card, composer, bubble and the fade above the composer, with brand name, slogan and icon path edited in place. Client-only; disable it to restore the original."
   }
 }

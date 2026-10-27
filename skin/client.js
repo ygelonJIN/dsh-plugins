@@ -28,16 +28,33 @@ window.__ModuleLoader__.load({
           + 'Every hue runs left to right, brightness top to bottom, so red, orange, green, blue and purple are all in '
           + 'the same picture; the strip below sets how saturated. Brand name, slogan and icon are further down.',
         'look.target.seed': 'Accent',
+        'look.group.seed': 'Accent',
+        'look.group.sidebar': 'Sidebar',
+        'look.group.chat': 'Conversation',
+        'look.group.input': 'Composer',
+        'look.group.overlay': 'Menus & overlays',
+        'look.group.brand': 'Brand',
         'look.target.sidebar': 'Sidebar / files',
         'look.target.base': 'Conversation',
         'look.target.card': 'Card',
         'look.target.nested': 'Nested card',
         'look.target.dialog': 'Composer',
         'look.target.bubble': 'Bubble',
-        'look.target.group': 'Workspace stripe',
+        'look.target.code': 'Code block (body)',
+        'look.target.toolOutput': 'Tool output block',
+        'look.target.codeBanner': 'Code block (banner)',
+        'look.target.inlineCode': 'Inline code',
+        'look.target.menu': 'Menus & popovers',
         'look.target.seat': 'Composer fade',
+        'look.target.groupCard': 'Workspace card',
+        'look.target.groupEdge': 'Workspace card outline',
+        'look.target.rowOpen': 'Open row',
+        'look.target.rowRun': 'Running row',
         'look.seatHint': 'The fade above the composer only takes an opacity — it never gets a colour.',
         'look.target.icon': 'Icon',
+        'look.target.rowIcon': 'Row action icons',
+        'look.target.changesHead': 'Edited-files header',
+        'look.target.changesRow': 'Edited-files row',
         'look.target.brandLead': 'Name, first',
         'look.target.brandTail': 'Name, second',
         'look.alpha': 'Opacity',
@@ -62,16 +79,33 @@ window.__ModuleLoader__.load({
           + '横向是全部色相、纵向是明暗，红橙黄绿蓝紫都在同一张图里；下面那条带子决定选多浓。'
           + '品牌名称、标语和图标在本页最下方。',
         'look.target.seed': '主色',
+        'look.group.seed': '主色',
+        'look.group.sidebar': '侧栏',
+        'look.group.chat': '对话区',
+        'look.group.input': '输入区',
+        'look.group.overlay': '弹层',
+        'look.group.brand': '品牌',
         'look.target.sidebar': '侧栏 / 文件区',
         'look.target.base': '对话区',
         'look.target.card': '卡片',
         'look.target.nested': '嵌套卡片',
         'look.target.dialog': '输入框',
         'look.target.bubble': '气泡',
-        'look.target.group': '工作区色带',
+        'look.target.code': '代码块（主体）',
+        'look.target.toolOutput': '工具输出块',
+        'look.target.codeBanner': '代码块（语言条）',
+        'look.target.inlineCode': '行内代码',
+        'look.target.menu': '菜单 / 弹层',
         'look.target.seat': '输入框上渐隐',
+        'look.target.groupCard': '工作区卡片',
+        'look.target.groupEdge': '工作区卡片描边',
+        'look.target.rowOpen': '当前对话底色',
+        'look.target.rowRun': '运行中 / 完成底色',
         'look.seatHint': '输入框上方那条渐隐只调透明度，不参与配色。',
         'look.target.icon': '图标',
+        'look.target.rowIcon': '侧栏行图标',
+        'look.target.changesHead': '已编辑文件（头行）',
+        'look.target.changesRow': '已编辑文件（文件行）',
         'look.target.brandLead': '名称·前段',
         'look.target.brandTail': '名称·后段',
         'look.alpha': '透明度',
@@ -110,12 +144,21 @@ window.__ModuleLoader__.load({
       surfaces: {},
       alphas: {},
       paint: {},
-      groups: {},
     };
 
     // 直接着色的目标：不走 token，直接写进组件的颜色。
     const PAINT_TARGETS = [
       { id: 'icon', storeKey: 'iconColor', fallback: 'currentColor' },
+      // 侧栏行悬停出来的动作图标（省略号 / 置顶 / 归档）：官方组件改不了属性，
+      // 走 --ys-row-icon 变量 + CSS 规则染色。
+      { id: 'rowIcon', storeKey: 'rowIconColor', fallback: 'var(--dsw-alias-label-tertiary)' },
+      // 「已编辑文件」卡片：头那行和下面的文件行走组件内部变量（组件自己声明，
+      // 祖先覆盖不到），只能落成 --ys-* 变量 + 带开关的 CSS 规则。
+      // 代码块语言条实际是 banner 外层用 bg-base、内层 [data-code-block-banner] 自身没背景，
+      // 覆盖 banner token 根本没被渲染路径读取，只能直接给那个元素上背景。
+      { id: 'codeBanner', storeKey: 'codeBannerColor', fallback: 'var(--dsw-static-neutral-bluish-50)', alpha: true },
+      { id: 'changesHead', storeKey: 'changesHeadColor', fallback: 'var(--dsw-static-neutral-50)', alpha: true },
+      { id: 'changesRow', storeKey: 'changesRowColor', fallback: 'transparent', alpha: true },
       { id: 'brandLead', storeKey: 'leadColor', fallback: 'var(--dsw-alias-label-primary)' },
       { id: 'brandTail', storeKey: 'tailColor', fallback: 'var(--dsw-alias-label-secondary)' },
     ];
@@ -123,6 +166,14 @@ window.__ModuleLoader__.load({
     // 可改背景的表面：加一个新区域 = 往这张表加一行，外观页自动多一个目标。
     // pane: 官方把透明度硬编码在 hash 类名规则里，只能整条重写（见 PANE_RULES）；
     // fallback: 官方浅/深两色，用户只调透明度不选色时当底色。
+    // 工作区组卡片的默认值，必须等于 sidebar-marks 里那两个变量的默认观感，
+    // 没调过时才算“零变化”；透明度会再乘上去，所以这里保留原本的 5% / 22%。
+    const WORKSPACE_FILL = 'color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent)';
+    const WORKSPACE_EDGE = 'color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent)';
+    // 侧栏两档行底色，默认值等于 sidebar-marks 里的 30% / 15%（完成未读跟运行中同一条变量）。
+    const ROW_OPEN = 'color-mix(in srgb,var(--dsw-alias-state-business-primary) 30%,transparent)';
+    const ROW_RUN = 'color-mix(in srgb,var(--dsw-alias-state-business-primary) 15%,transparent)';
+
     const SURFACES = [
       { id: 'sidebar', tokens: ['--dsw-specific-sidebar-fill'], pane: true, fallback: { light: '#f9fafb', dark: '#1b1b1c' } },
       { id: 'base', tokens: ['--dsw-alias-bg-base'], pane: true, fallback: { light: '#ffffff', dark: '#151517' } },
@@ -130,6 +181,49 @@ window.__ModuleLoader__.load({
       { id: 'nested', tokens: ['--dsw-alias-bg-layer-2'], fallback: { light: '#ffffff', dark: '#2c2c2e' } },
       { id: 'dialog', tokens: ['--dsw-specific-input-major'], fallback: { light: '#ffffff', dark: '#2c2c2e' } },
       { id: 'bubble', tokens: ['--dsw-specific-bubble'], fallback: { light: '#edf3fe', dark: '#2c2c2e' } },
+      // 对话区里的 Markdown 块：代码块（含顶部语言条，一起走才不割裂）和行内 code。
+      // 它们跟「卡片」用的 bg-layer-1 是两套 token，所以之前调卡片对代码块无效。
+      // 代码块主体：走 Shiki 自己的 --shiki-background（它默认指向 code-block），
+      // 这样就不会顺带改到工具输出块——那个另开一项。
+      {
+        id: 'code',
+        tokens: ['--shiki-background'],
+        fallback: {
+          light: 'var(--dsw-static-neutral-bluish-50)',
+          dark: 'var(--dsw-static-neutral-bluish-900)',
+        },
+      },
+      {
+        id: 'toolOutput',
+        tokens: ['--dsw-alias-markdown-code-block'],
+        fallback: {
+          light: 'var(--dsw-static-neutral-bluish-50)',
+          dark: 'var(--dsw-static-neutral-bluish-900)',
+        },
+      },
+      {
+        id: 'inlineCode',
+        tokens: ['--dsw-alias-markdown-inline-code'],
+        fallback: { light: 'var(--dsw-static-neutral-50)', dark: 'var(--dsw-static-neutral-800)' },
+      },
+      // 弹层底色有两层名字，必须一起写：
+      //   --dsw-menu-surface-fill  → 公共菜单走 MenuSurface（账户菜单就是这个，官方 README 明确
+      //                              要求平台代码保留这组 token 值）
+      //   --dsw-specific-menu      → 它的别名，队列 / 上下文 / 统计等老面板在用
+      // 只覆盖别名时账户菜单纹丝不动，这就是“调了没反应”的原因。
+      {
+        id: 'menu',
+        tokens: ['--dsw-menu-surface-fill', '--dsw-specific-menu'],
+        fallback: { light: '#f8f9fa94', dark: '#43454a73' },
+      },
+      // sidebar-marks 画的工作区组卡片：那两个变量由它在 body 上声明，
+      // 这里用同一套机制覆盖（内联压过它的样式表规则），透明度照样折进值里。
+      { id: 'groupCard', tokens: ['--sm-frame-fill'], fallback: { light: WORKSPACE_FILL, dark: WORKSPACE_FILL } },
+      { id: 'groupEdge', tokens: ['--sm-frame'], fallback: { light: WORKSPACE_EDGE, dark: WORKSPACE_EDGE } },
+      // 侧栏行的两档底色（sidebar-marks 的变量，同样走 body 内联覆盖）。
+      // 「运行中」这一条同时管完成未读：那边读的是同一个 --sm-run-fill。
+      { id: 'rowOpen', tokens: ['--sm-open-fill'], fallback: { light: ROW_OPEN, dark: ROW_OPEN } },
+      { id: 'rowRun', tokens: ['--sm-run-fill'], fallback: { light: ROW_RUN, dark: ROW_RUN } },
       // 输入框上方的渐隐遮罩（composerSeat）：不是 token 面，只给一条透明度滑条。
       { id: 'seat', tokens: [], alphaOnly: true, fallback: { light: '#ffffff', dark: '#151517' } },
     ];
@@ -169,19 +263,6 @@ window.__ModuleLoader__.load({
             if (typeof value === 'string' && parseColor(value) !== null) paint[key] = value;
           }
         }
-        const groups = {};
-        if (stored !== null && typeof stored.groups === 'object' && stored.groups !== null) {
-          for (const [key, value] of Object.entries(stored.groups)) {
-            if (typeof value === 'string' && parseColor(value) !== null && key.length <= 200) groups[key] = value;
-          }
-        }
-        // 统一色带：旧版本按工作区分别存（groups[workspaceId]），现在只认 groups.all。
-        // 迁移取第一个有效值，升级后观感不变。
-        if (groups.all === undefined) {
-          const first = Object.values(groups).find((value) => typeof value === 'string');
-          if (typeof first === 'string') groups.all = first;
-        }
-        for (const key of Object.keys(groups)) if (key !== 'all') delete groups[key];
         return {
           lead: sanitizeText(stored?.lead, LOOK_DEFAULT.lead),
           tail: sanitizeText(stored?.tail, LOOK_DEFAULT.tail),
@@ -191,7 +272,6 @@ window.__ModuleLoader__.load({
           surfaces,
           alphas,
           paint,
-          groups,
         };
       } catch {
         return { ...LOOK_DEFAULT };
@@ -228,11 +308,6 @@ window.__ModuleLoader__.load({
     /** 主色，或某个表面的覆盖色；没覆盖时返回 null。 */
     function surfaceColor(id) {
       if (id === 'seed') return look.seed;
-      const def = targetById(id);
-      if (def.kind === 'groupAll') {
-        const value = look.groups.all;
-        return typeof value === 'string' && parseColor(value) !== null ? value : null;
-      }
       const value = look.surfaces[id];
       return typeof value === 'string' && parseColor(value) !== null ? value : null;
     }
@@ -259,9 +334,42 @@ window.__ModuleLoader__.load({
         labelKey: 'look.target.' + paint.id,
         storeKey: paint.storeKey,
         fallback: paint.fallback,
-      })))
-      // 工作区色带是“所有工作区一起配”，不再是每个工作区一个目标。
-      .concat([{ id: 'group', kind: 'groupAll', labelKey: 'look.target.group' }]);
+        alpha: paint.alpha === true,
+      })));
+
+    // 外观页的胶囊按界面分区排，顺序就是这里；加目标时在 GROUP_OF 里归一次类。
+    const TARGET_GROUPS = [
+      { id: 'seed', labelKey: 'look.group.seed' },
+      { id: 'sidebar', labelKey: 'look.group.sidebar' },
+      { id: 'chat', labelKey: 'look.group.chat' },
+      { id: 'input', labelKey: 'look.group.input' },
+      { id: 'overlay', labelKey: 'look.group.overlay' },
+      { id: 'brand', labelKey: 'look.group.brand' },
+    ];
+
+    // 组内顺序：TARGETS 是按「token 面 + paint 面」拼的，跨类别时顺序会跳，
+    // 这里显式排一遍，保证相邻的东西（比如代码块主体/语言条）挨在一起。
+    const TARGET_ORDER = [
+      'seed',
+      'sidebar', 'rowOpen', 'rowRun', 'groupCard', 'groupEdge', 'rowIcon',
+      'base', 'card', 'nested', 'bubble',
+      'code', 'codeBanner', 'inlineCode', 'toolOutput', 'changesHead', 'changesRow',
+      'dialog', 'seat',
+      'menu',
+      'icon', 'brandLead', 'brandTail',
+    ];
+
+    const GROUP_OF = {
+      seed: 'seed',
+      sidebar: 'sidebar', rowOpen: 'sidebar', rowRun: 'sidebar',
+      groupCard: 'sidebar', groupEdge: 'sidebar', rowIcon: 'sidebar',
+      base: 'chat', card: 'chat', nested: 'chat', bubble: 'chat',
+      code: 'chat', codeBanner: 'chat', inlineCode: 'chat', toolOutput: 'chat',
+      changesHead: 'chat', changesRow: 'chat',
+      dialog: 'input', seat: 'input',
+      menu: 'overlay',
+      icon: 'brand', brandLead: 'brand', brandTail: 'brand',
+    };
 
     function targetById(id) {
       return TARGETS.find((item) => item.id === id) ?? TARGETS[0];
@@ -272,7 +380,6 @@ window.__ModuleLoader__.load({
       const def = targetById(id);
       if (def.kind === 'seed') return look.seed;
       if (def.kind === 'paint') return look.paint[def.storeKey];
-      if (def.kind === 'groupAll') return look.groups.all;
       const value = look.surfaces[id];
       return typeof value === 'string' && parseColor(value) !== null ? value : null;
     }
@@ -286,27 +393,16 @@ window.__ModuleLoader__.load({
         else paint[def.storeKey] = value;
         return setLook({ paint });
       }
-      if (def.kind === 'groupAll') {
-        const groups = { ...look.groups };
-        if (value === null) delete groups.all;
-        else groups.all = value;
-        return setLook({ groups });
-      }
       return setSurfaceColor(id, value);
     }
 
-    /** 所有工作区共用一条色带；没设色就把它清掉。 */
-    function applyGroups() {
+    /** 工作区色带已下线：只清掉老版本自己打在行上的那层内联色带，
+     * 按 data-ys-group 认领，绝不碰官方自己的 box-shadow。 */
+    function clearGroupTints() {
       if (typeof document === 'undefined') return;
-      const color = look.groups.all;
-      for (const row of document.querySelectorAll('[data-row-key^="workspace:"]')) {
-        if (typeof color === 'string') {
-          row.setAttribute('data-ys-group', '');
-          row.style.setProperty('box-shadow', `inset 3px 0 0 ${color}`);
-        } else {
-          row.removeAttribute('data-ys-group');
-          row.style.removeProperty('box-shadow');
-        }
+      for (const row of document.querySelectorAll('[data-row-key^="workspace:"][data-ys-group]')) {
+        row.removeAttribute('data-ys-group');
+        row.style.removeProperty('box-shadow');
       }
     }
 
@@ -749,6 +845,29 @@ html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="co
     // 颜色和透明度直接吃 --dsw-specific-input-major，也就是外观页「输入框」那一项
     // （ui-layout 会把覆盖写成 body 内联变量），所以调输入框就一起变，不需要另开一项。
     const DOCK_RULES = `
+/* 侧栏行悬停出来的动作图标（省略号 / 置顶 / 归档）与工作区行同款按钮。
+   变量由 applyPaintVars 写到 html；没设时 var() 回退 currentColor，官方行为不变。 */
+/* 「已编辑文件」卡片：头行读组件自己的 --changes-fill（在 .card 上声明，祖先覆盖不到），
+   文件行本身没有底色。两个都靠开关属性 + --ys-* 变量，没设时规则完全不生效。 */
+html[data-ys-changes-head] [data-changed-files][data-changed-files][data-changed-files]{
+  --changes-fill:var(--ys-changes-head);--changes-hover:var(--ys-changes-head)
+}
+html[data-ys-changes-row] [data-changed-files] [class*="_row"]{background:var(--ys-changes-row)}
+/* 代码块主体：有语言名时是 Shiki 的内联 style（var(--shiki-background)）；
+   没语言名时渲染的是 <pre class="..._plain">，没有任何背景，露出的是容器上的 bg-base ——
+   所以调「代码块（主体）」对它无效。这里用 md-code-block 这个稳定类名兜住 pre 和容器本身，
+   只在用户调过这一项（html[data-ys-code-block]）时生效。 */
+html[data-ys-code-block] [class*="md-code-block"],
+html[data-ys-code-block] [class*="md-code-block"] pre{background-color:var(--shiki-background)}
+/* 代码块语言条：真实结构是 bannerWrap（background-color: var(--dsw-alias-bg-base)）> 内层
+   [data-code-block-banner]（自己常常没有背景）。两层都上色才不会露出下面的 bg-base：
+   第二行用 :has 命中那个直接父级，不依赖 hash 类名。 */
+/* 只给内层上色，外层一律透明：两层都涂成同一个半透明色会叠出更深的一层
+   （1-(1-α)² 而不是 α），头行就会比内容区明显重。 */
+html[data-ys-code-banner] :has(> [data-code-block-banner]){background-color:transparent}
+html[data-ys-code-banner] [data-code-block-banner]{background-color:var(--ys-code-banner)}
+[data-row-key] [class*="rowActions"] svg,
+[data-row-key] [class*="iconButton"] svg{color:var(--ys-row-icon,currentColor)}
 [data-composer-dock]:not(:empty){
   --ys-dock-fill:var(--dsw-specific-input-major);
   --ys-dock-radius:10px;
@@ -799,6 +918,13 @@ html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="co
     function markChatMain() {
       chatNodesCache = [];
       if (typeof document === 'undefined' || !document.body) return;
+      // 先撤掉上一轮写的内联背景和标记：不撤的话，这些节点计算出来的背景是
+      // 我们写的半透明渐变，不再等于 bg-base，会被自己的判断排除在外，
+      // 于是来回切会话时透明度时有时无。
+      for (const node of document.querySelectorAll('[data-ys-chat-main]')) {
+        node.style.removeProperty('background');
+        node.removeAttribute('data-ys-chat-main');
+      }
       const center = document.querySelector('[class*="centerCol"]');
       if (center === null) return;
       const base = computedBaseColor();
@@ -829,6 +955,40 @@ html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="co
       }
       for (const node of found) node.setAttribute('data-ys-chat-main', '');
       chatNodesCache = found;
+    }
+
+    /**
+     * 会话切换 / 冷启动都会重建主列内容，缓存的对话区背景层随之失效 —— 表现为
+     * “切一次对话，透明度就掉回官方”。这里只盯两件事：主列子树有增删（rAF 合并），
+     * 以及缓存节点已经脱离文档（isConnected === false）。流式输出只改文本、节点还在，
+     * 所以不会触发重跑。
+     */
+    function watchChatLayers() {
+      if (typeof MutationObserver !== 'function' || typeof document === 'undefined') return () => {};
+      let handle = 0;
+      const refresh = () => {
+        const stale = chatNodesCache.length === 0 || chatNodesCache.some((node) => node.isConnected !== true);
+        if (!stale) return;
+        markChatMain();
+        applyAlphas();
+      };
+      const schedule = () => {
+        if (handle !== 0) return;
+        handle = typeof requestAnimationFrame === 'function'
+          ? requestAnimationFrame(() => { handle = 0; refresh(); })
+          : setTimeout(() => { handle = 0; refresh(); }, 120);
+      };
+      const observer = new MutationObserver((records) => {
+        if (records.some((record) => record.type === 'childList')) schedule();
+      });
+      const center = document.querySelector('[class*="centerCol"]');
+      observer.observe(center ?? document.body, { childList: true, subtree: true });
+      // 冷启动时 shell 还没挂载，补一次延迟重试；之后全靠 observer，无轮询。
+      const retry = typeof setTimeout === 'function' ? setTimeout(refresh, 1500) : 0;
+      return () => {
+        observer.disconnect();
+        if (retry !== 0) clearTimeout(retry);
+      };
     }
 
     /** 透明度写进根元素的 CSS 变量和开关属性；没设置就移除，回到官方值。 */
@@ -903,7 +1063,10 @@ html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="co
 .ys-pal h4{margin:18px 0 8px;font-size:13px;font-weight:600}
 .ys-pal-desc{margin:0 0 12px;color:var(--dsw-alias-label-secondary)}
 .ys-pal-section{margin:0 0 6px;color:var(--dsw-alias-label-tertiary);font-size:11px}
+.ys-pal-groups{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.ys-pal-group .ys-pal-section{margin:0 0 6px}
 .ys-pal-targets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.ys-pal-group .ys-pal-targets{margin-bottom:0}
 .ys-pal-target{padding:0 9px;height:26px;border-radius:999px;border:1px solid var(--dsw-alias-border-l4);background:0 0;color:var(--dsw-alias-label-secondary);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .ys-pal-target[data-active=true]{border-color:var(--dsw-alias-label-primary);color:var(--dsw-alias-label-primary)}
 .ys-pal-target i{display:block;width:11px;height:11px;border-radius:3px;border:1px solid var(--dsw-alias-border-l3)}
@@ -1019,7 +1182,7 @@ html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="co
       // 打开设置时先定位对话区的背景层、给已设色的工作区染色，然后才应用透明度。
       // 只在挂载时做一次：拖滑条时用缓存，不必每帧遍历 DOM。
       React.useEffect(() => {
-        applyGroups();
+        clearGroupTints();
         markChatMain();
         applyAlphas();
         return undefined;
@@ -1082,7 +1245,9 @@ html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="co
       // 只有侧栏和对话区有透明度可调；默认值就是官方那两个数。
       const targetDef = targetById(target);
       // 每个背景面都有透明度；品牌位和工作区组没有。
-      const alphaKey = targetDef.kind === 'token' ? target : null;
+      const alphaKey = targetDef.kind === 'token' || (targetDef.kind === 'paint' && targetDef.alpha === true)
+        ? target
+        : null;
       const alphaOnly = targetDef.alphaOnly === true;
       const alphaDefault = alphaKey === 'sidebar' ? 40 : 100;
       const alphaValue = alphaKey === null
@@ -1134,16 +1299,24 @@ html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="co
         h('h3', null, t('look.title')),
         h('p', { className: 'ys-pal-desc' }, t('look.desc')),
 
-        h('div', { className: 'ys-pal-targets' }, targets.map((item) => h('button', {
-          key: item.id,
-          type: 'button',
-          className: 'ys-pal-target',
-          'data-active': item.id === target ? 'true' : 'false',
-          onClick: () => setTarget(item.id),
-        },
-          h('i', { style: { background: colorHex(item.color) } }),
-          item.label,
-        ))),
+        h('div', { className: 'ys-pal-groups' }, TARGET_GROUPS.map((group) => {
+          const items = targets
+            .filter((item) => (GROUP_OF[item.id] ?? 'chat') === group.id)
+            .sort((a, b) => TARGET_ORDER.indexOf(a.id) - TARGET_ORDER.indexOf(b.id));
+          if (items.length === 0) return null;
+          return h('div', { key: group.id, className: 'ys-pal-group' },
+            h('p', { className: 'ys-pal-section' }, t(group.labelKey)),
+            h('div', { className: 'ys-pal-targets' }, items.map((item) => h('button', {
+              key: item.id,
+              type: 'button',
+              className: 'ys-pal-target',
+              'data-active': item.id === target ? 'true' : 'false',
+              onClick: () => setTarget(item.id),
+            },
+              h('i', { style: { background: colorHex(item.color) } }),
+              item.label,
+            ))));
+        })),
 
         alphaOnly ? h('p', { className: 'ys-pal-code' }, t('look.seatHint')) : colorBlocks,
         alphaKey === null ? null : h('label', { className: 'ys-pal-alpha' },
@@ -1173,13 +1346,11 @@ html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="co
               const surfaces = { ...look.surfaces };
               const alphas = { ...look.alphas };
               const paint = { ...look.paint };
-              const groups = { ...look.groups };
               const def = targetById(target);
               if (def.kind === 'paint') delete paint[def.storeKey];
-              if (def.kind === 'groupAll') delete groups.all;
               delete surfaces[target];
               delete alphas[target];
-              setLook({ surfaces, alphas, paint, groups });
+              setLook({ surfaces, alphas, paint });
             },
           }, target === 'seed' ? t('look.resetSeed') : t('look.clear')),
           isSurface && !alphaOnly
@@ -1268,14 +1439,60 @@ html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="co
         let disposeLook = null;
 
         // 外观一变：重写 token 覆盖层、换 favicon、刷标题和标语。
+        /** paint 类里需要落到 DOM 上的那些（官方组件改不了属性）：目前只有侧栏行图标。 */
+        const applyPaintVars = () => {
+          if (typeof document === 'undefined' || !document.documentElement) return;
+          const root = document.documentElement;
+          const setVar = (name, flag, value) => {
+            if (typeof value === 'string' && value !== '') {
+              root.style.setProperty(name, value);
+              root.setAttribute(flag, '');
+            } else {
+              root.style.removeProperty(name);
+              root.removeAttribute(flag);
+            }
+          };
+          /** paint 目标的颜色校验 + 把透明度折进值里（这两项在 UI 上带透明度滑条）。 */
+          const tinted = (id, storeKey) => {
+            const color = look.paint[storeKey];
+            if (typeof color !== 'string' || parseColor(color) === null) return null;
+            const alpha = look.alphas[id];
+            return typeof alpha === 'number' && alpha < 100
+              ? `color-mix(in srgb, ${color} ${alpha}%, transparent)`
+              : color;
+          };
+          const plain = (storeKey) => {
+            const color = look.paint[storeKey];
+            return typeof color === 'string' && parseColor(color) !== null ? color : null;
+          };
+          setVar('--ys-row-icon', 'data-ys-row-icon', plain('rowIconColor'));
+          setVar('--ys-code-banner', 'data-ys-code-banner', tinted('codeBanner', 'codeBannerColor'));
+          setVar('--ys-changes-head', 'data-ys-changes-head', tinted('changesHead', 'changesHeadColor'));
+          setVar('--ys-changes-row', 'data-ys-changes-row', tinted('changesRow', 'changesRowColor'));
+        };
+
+        /** 只对"需要按需接管"的面加开关属性，没设值时规则完全不生效。 */
+        const applySurfaceFlags = () => {
+          if (typeof document === 'undefined' || !document.documentElement) return;
+          const root = document.documentElement;
+          const toggle = (id, flag) => {
+            const touched = typeof look.surfaces[id] === 'string' || typeof look.alphas[id] === 'number';
+            if (touched) root.setAttribute(flag, '');
+            else root.removeAttribute(flag);
+          };
+          toggle('code', 'data-ys-code-block');
+        };
+
         const applyNow = () => {
           if (disposeLook !== null) {
             try { disposeLook(); } catch { /* layer already replaced */ }
             disposeLook = null;
           }
           disposeLook = applyLook(themeRef);
+          applySurfaceFlags();
+          applyPaintVars();
           applyAlphas();
-          applyGroups();
+          clearGroupTints();
           syncFavicon();
           syncSloganText();
           syncTitle();
@@ -1293,6 +1510,9 @@ html[data-ys-seat][data-platform=darwin] [data-content-phase=active] [class*="co
           document.head.appendChild(tag);
           return () => tag.remove();
         });
+
+        // 会话切换后重新定位对话区背景层，否则透明度只活到第一次切会话。
+        ctx.effect(() => watchChatLayers());
 
         // theme 由 ui-theme 提供：色阶覆盖走官方快照，ui-layout 会把它
         // 写成 body 的内联变量，优先级压过内置样式表。

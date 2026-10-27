@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Upgrade self-check",
+    "description": "A Settings → Plugins tab that lists every @local plugin's last self-check result, naming the shipped anchor that changed and what stopped working. Client-only; reads the aggregated localStorage record."
+  }
+}

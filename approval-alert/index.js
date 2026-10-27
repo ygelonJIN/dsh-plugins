@@ -1,5 +1,7 @@
 import { execFile } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 /**
@@ -71,9 +73,41 @@ function notifyMac({ title, subtitle, message, sound }) {
   execFile(OSASCRIPT, ['-e', pieces.join(' ')], { timeout: 8000 }, () => {});
 }
 
+/** Shared self-check record: the Settings → Plugins tab reads these files. */
+function recordSelfCheck(misses) {
+  try {
+    const dir = join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'storages', 'self-check');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'approval-alert.json'),
+      JSON.stringify({ ok: misses.length === 0, misses, at: Date.now() }, null, 2),
+      { mode: 0o600 },
+    );
+  } catch {
+    // A failed record must never block the plugin itself.
+  }
+}
+
 export function apply(ctx, config = {}) {
   const options = { ...DEFAULTS, ...config };
   if (options.enabled === false) return;
+
+  // One-shot self-check: the waterfall name is unofficial and the notifier is
+  // a vendored binary; either going missing silences the plugin.
+  const misses = [];
+  if (typeof ctx.on !== 'function') {
+    misses.push({ anchor: 'ctx.on', impact: '无法挂审批监听，提醒不会触发' });
+  }
+  if (!existsSync(NOTIFIER)) {
+    misses.push({ anchor: '通知程序 ' + NOTIFIER, impact: '提醒不会弹出' });
+  } else if (!existsSync(OSASCRIPT)) {
+    misses.push({ anchor: OSASCRIPT, impact: '提醒不会弹出' });
+  }
+  recordSelfCheck(misses);
+  for (const miss of misses) {
+    console.warn('[approval-alert] 自检：' + miss.anchor + ' → ' + miss.impact);
+  }
+  if (typeof ctx.on !== 'function') return;
 
   const lastByTool = new Map();
 

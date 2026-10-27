@@ -28,8 +28,8 @@ window.__ModuleLoader__.load({
         'dialog.kept': 'The prefix keeps its token, cost, and context totals.',
         'dialog.filesUntouched': 'Files are not changed.',
         'dialog.tailTokens': 'Tokens spent in the removed turns: {input} in / {output} out. They leave the statistics; the money was still spent.',
-        'dialog.firstTurn': 'This is the first turn: a new empty conversation opens and the old conversation is removed.',
-        'dialog.oldSession': 'The old conversation is archived now and queued for deletion.',
+        'dialog.firstTurn': 'This is the first turn: a new empty conversation opens and the old one is archived.',
+        'dialog.oldSession': 'The old conversation is archived now. Its files are removed right away when no agent holds them, otherwise on the next start.',
         'dialog.oldActivity': 'These stop with it: {list}',
         'activity.turn': 'a running turn',
         'activity.subagent': 'running subagents',
@@ -37,6 +37,7 @@ window.__ModuleLoader__.load({
         'activity.schedule': 'scheduled reminders',
         'activity.work': 'work',
         'toast.done': 'Undone. The new conversation is open.',
+        'toast.queued': 'Undone. The old conversation is archived and will be deleted on the next start, because an agent still holds it.',
         'toast.forkFailed': 'The new conversation could not be created.',
         'toast.deleteFailed': 'The old conversation could not be removed: {message}',
         'toast.failed': 'Request failed: {message}',
@@ -57,8 +58,8 @@ window.__ModuleLoader__.load({
         'dialog.kept': '切点之前的 token、金额、上下文都会保留。',
         'dialog.filesUntouched': '文件不会改动。',
         'dialog.tailTokens': '被撤轮次消耗：输入 {input} / 输出 {output} token。它们会从统计里消失，但钱已经花了。',
-        'dialog.firstTurn': '这是第 1 轮：会新建一个空白对话，并删除旧对话。',
-        'dialog.oldSession': '旧对话会先归档，并排队删除。',
+        'dialog.firstTurn': '这是第 1 轮：会新建一个空白对话，旧对话归档。',
+        'dialog.oldSession': '旧对话会立即归档：没有 Agent 占着就当场删文件，否则下次启动时删。',
         'dialog.oldActivity': '会一并停掉：{list}',
         'activity.turn': '正在进行的回合',
         'activity.subagent': '运行中的子代理',
@@ -66,6 +67,7 @@ window.__ModuleLoader__.load({
         'activity.schedule': '定时提醒',
         'activity.work': '运行中的工作',
         'toast.done': '已撤回：新对话已打开。',
+        'toast.queued': '已撤回：旧对话已归档，但还有 Agent 持有它，会在下次启动时删除。',
         'toast.forkFailed': '新对话创建失败。',
         'toast.deleteFailed': '旧对话删除失败：{message}',
         'toast.failed': '请求失败：{message}',
@@ -127,14 +129,30 @@ window.__ModuleLoader__.load({
       for (const listener of dialogListeners) listener();
     }
 
-    function writeDraft(sessionId, text) {
-      if (typeof text !== 'string' || text === '') return;
+    /**
+     * The composer owns the draft document (`dsh.conversation.<sessionId>`,
+     * read once when the input source mounts). Injection goes through the
+     * official seam; `writeDraft` stays as the fallback for a composer that
+     * refuses it, because a second writer would race the store's own persist.
+     */
+    function draftStore(sessionId) {
       try {
         const key = `${CONVERSATION_STORE}.${sessionId}`;
         const raw = localStorage.getItem(key);
         const stored = raw === null ? {} : (JSON.parse(raw) ?? {});
-        stored.draft = text;
-        localStorage.setItem(key, JSON.stringify(stored));
+        return { key, stored };
+      } catch {
+        return undefined;
+      }
+    }
+
+    function writeDraft(sessionId, text) {
+      if (typeof text !== 'string' || text === '') return;
+      const store = draftStore(sessionId);
+      if (store === undefined) return;
+      try {
+        store.stored.draft = text;
+        localStorage.setItem(store.key, JSON.stringify(store.stored));
       } catch {
         // Draft restoration is best effort.
       }
@@ -198,10 +216,13 @@ window.__ModuleLoader__.load({
               atSeq: plan.stats.cutSeq,
               increaseTitle: false,
             });
-            writeDraft(childId, prompt);
             await openSession(childId);
-            await props.applyDraft(childId, prompt);
+            // The fork copies the prefix, so an inherited goal would restart its
+            // rounds in the child: clear it before anything else touches the new
+            // conversation.
             await props.clearGoal(childId);
+            const injected = await props.applyDraft(childId, prompt);
+            if (injected !== true) writeDraft(childId, prompt);
           } else {
             await startSession(prompt === '' ? undefined : { prompt, clearPreviousDraft: true });
           }
@@ -216,16 +237,25 @@ window.__ModuleLoader__.load({
           setPhase('error');
           return;
         }
+        let outcome = 'deleted';
         try {
           const removed = await post(DELETE_SESSION, { sessionId }, 30_000);
           if (removed.status < 200 || removed.status >= 300) {
+            outcome = 'failed';
             showToast(t('toast.deleteFailed', { message: removed.payload?.message ?? `HTTP ${removed.status}` }), 'error');
+          } else if (removed.payload?.queued === true) {
+            // 202: session-delete archived the Session and queued the files for
+            // the next Host start, because an Agent still owns them. Never
+            // report that as a finished deletion.
+            outcome = 'queued';
           }
         } catch (failure) {
+          outcome = 'failed';
           showToast(t('toast.deleteFailed', { message: messageOf(failure) }), 'error');
         }
         try { await refreshSessions(); } catch { /* ignore */ }
-        showToast(t('toast.done'));
+        if (outcome === 'deleted') showToast(t('toast.done'));
+        else if (outcome === 'queued') showToast(t('toast.queued'));
         onClose();
       };
 
@@ -414,6 +444,49 @@ window.__ModuleLoader__.load({
       };
     }
 
+    /**
+     * One-shot self-check: probes the shipped anchors this plugin builds on so
+     * a Harness upgrade reports what moved instead of failing silently. Runs
+     * once after the first paint (one bounded retry while the shell mounts),
+     * then never again — no timer, no observer, no recurring cost.
+     */
+    function selfCheck(label, checks) {
+      let runs = 0;
+      const run = () => {
+        runs += 1;
+        const misses = [];
+        for (const check of checks) {
+          let ok = false;
+          try { ok = check.probe() === true; } catch { ok = false; }
+          if (!ok) misses.push(check);
+        }
+        if (runs === 1 && misses.length === checks.length) {
+          setTimeout(run, 1500); // shell not mounted yet is not a broken anchor
+          return;
+        }
+        // Keep the last result where a human can read it without DevTools:
+        // localStorage['dsh.self-check'] holds one entry per plugin.
+        try {
+          const key = 'dsh.self-check';
+          const all = JSON.parse(localStorage.getItem(key) ?? '{}');
+          all[label] = {
+            ok: misses.length === 0,
+            misses: misses.map((m) => ({ anchor: m.anchor, impact: m.impact })),
+            at: Date.now(),
+          };
+          localStorage.setItem(key, JSON.stringify(all));
+        } catch {
+          // Storage unavailable: the console warning still carries the result.
+        }
+        if (misses.length === 0) return;
+        console.warn('[' + label + '] 自检：' + misses.length + ' 处官方锚点变了，受影响的功能：');
+        for (const miss of misses) console.warn('  · ' + miss.anchor + ' → ' + miss.impact);
+        console.warn('[' + label + '] 修复参照 经验文档/插件开发.md「升级后失效排查」。');
+      };
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+      else setTimeout(run, 16);
+    }
+
     return {
       inject: ['slots', 'locale', 'sessions', 'uiWorkspace', 'remote', 'remote.goals'],
       apply(ctx) {
@@ -439,25 +512,29 @@ window.__ModuleLoader__.load({
             startSession: (options) => ctx.uiWorkspace.startSession(undefined, options),
             refreshSessions: () => ctx.sessions.refresh(),
             applyDraft: async (sessionId, prompt) => {
-              if (typeof prompt !== 'string' || prompt === '') return;
+              if (typeof prompt !== 'string' || prompt === '') return true;
               const conversation = ctx.get?.('conversation');
-              for (let attempt = 0; attempt < 6; attempt += 1) {
+              for (let attempt = 0; attempt < 20; attempt += 1) {
                 try {
                   const binding = ctx.sessions.binding(sessionId);
-                  if (binding !== undefined) {
-                    conversation?.input?.requestDraftInitialization?.(binding, { prompt, clearPreviousDraft: true });
-                    return;
+                  const input = conversation?.input;
+                  if (binding !== undefined && typeof input?.requestDraftInitialization === 'function') {
+                    // Returns "applied" | "preserved" | "blocked"; blocked means
+                    // the composer is mid-submit and the text was not written.
+                    const status = input.requestDraftInitialization(binding, { prompt, clearPreviousDraft: true });
+                    if (status !== 'blocked') return true;
                   }
                 } catch {
-                  // Retry while the binding appears.
+                  // Retry while the binding or the composer mounts.
                 }
-                await delay(50);
+                await delay(100);
               }
+              return false;
             },
             isCurrentSession: (sessionId) => mainSessionId(ctx) === sessionId,
             clearGoal: async (sessionId) => {
               try {
-                for (let attempt = 0; attempt < 5; attempt += 1) {
+                for (let attempt = 0; attempt < 20; attempt += 1) {
                   const goal = ctx.sessions.binding(sessionId)?.session.projections.faceOf('goal')?.getSnapshot()?.goal;
                   if (goal !== undefined && goal !== null) {
                     if (goal.phase !== 'complete') {
@@ -465,7 +542,7 @@ window.__ModuleLoader__.load({
                     }
                     return;
                   }
-                  await delay(60);
+                  await delay(100);
                 }
               } catch {
                 // A goal left over from the prefix must not fail the undo.
@@ -475,6 +552,17 @@ window.__ModuleLoader__.load({
         }))));
         ctx.effect(() => installUserAction(ctx, translate));
         ctx.effect(() => () => { closeUndo(); });
+
+        selfCheck(NS, [{
+          anchor: '用户消息行 [class*="_userRow"] + 复制按钮',
+          impact: '撤回入口不出现',
+          // Blank Sessions have no user rows yet: absence is inconclusive.
+          probe: () => {
+            const rows = [...document.querySelectorAll('[class*="_userRow"]')];
+            if (rows.length === 0) return true;
+            return rows.some((row) => row.querySelector('button[aria-label]') !== null);
+          },
+        }]);
       },
     };
   },

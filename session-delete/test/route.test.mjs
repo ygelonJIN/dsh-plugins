@@ -70,6 +70,16 @@ function harness(options = {}) {
       scope: { rawDispose: async () => { agentMap.delete(TARGET); } },
     });
   }
+  if (options.idleAgent === 'no-dispose') {
+    agentMap.set(TARGET, { status: 'idle', inbox: { nextTurn: [], nextStep: [] } });
+  }
+  if (options.idleAgent === 'throws') {
+    agentMap.set(TARGET, {
+      status: 'idle',
+      inbox: { nextTurn: [], nextStep: [] },
+      scope: { rawDispose: async () => { throw new Error('boom'); } },
+    });
+  }
   const base = snapshot(TARGET, options.header ?? {});
   if (options.formatStatus !== undefined) base.formatStatus = options.formatStatus;
   const child = snapshot(CHILD, { origin: 'subagent', parentSession: TARGET });
@@ -214,15 +224,38 @@ try {
     assert.equal(result.body.ok, true);
     assert.equal(result.body.queued, true);
     assert.equal(result.body.deleteAfterRestart, true);
-    assert.equal(result.body.reason, 'agent');
+    assert.equal(result.body.reason, 'agent: running');
     assert.deepEqual(calls.filter(([verb]) => verb === 'stop'), [['stop', TARGET]]);
     assert.deepEqual(calls.filter(([verb]) => verb === 'archive'), [['archive', TARGET, { stopActivity: true }]]);
     assert.equal(await exists(tree.targetDir), true);
     const entries = await queueEntries();
     assert.equal(entries.length, 1);
     assert.equal(entries[0].sessionId, TARGET);
-    assert.equal(entries[0].reason, 'agent');
+    assert.equal(entries[0].reason, 'agent: running');
     assert.equal(entries[0].hidden, true);
+  }
+
+  // --- an idle Agent with no release seam: queued with the exact reason ----
+  {
+    await resetTree();
+    const tree = await makeTree();
+    const { post } = harness({ idleAgent: 'no-dispose' });
+    const result = await post({ sessionId: TARGET });
+    assert.equal(result.status, 202);
+    assert.equal(result.body.reason, 'agent: no-dispose');
+    assert.equal(await exists(tree.targetDir), true);
+    assert.equal((await queueEntries())[0].reason, 'agent: no-dispose');
+  }
+
+  // --- a release that throws and keeps the Agent: queued with its message --
+  {
+    await resetTree();
+    const tree = await makeTree();
+    const { post } = harness({ idleAgent: 'throws' });
+    const result = await post({ sessionId: TARGET });
+    assert.equal(result.status, 202);
+    assert.equal(result.body.reason, 'agent: dispose-threw: boom');
+    assert.equal(await exists(tree.targetDir), true);
   }
 
   // --- loaded for viewing only: deleted immediately ------------------------
@@ -365,7 +398,7 @@ try {
     assert.equal(await exists(tree.targetDir), true);
     const entries = await queueEntries();
     assert.equal(entries[0].attempts, 1);
-    assert.equal(entries[0].lastError, 'agent');
+    assert.equal(entries[0].lastError, 'agent: running');
   }
 
   console.log('session-delete route tests passed');

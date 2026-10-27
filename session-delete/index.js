@@ -143,27 +143,42 @@ function delay(ms) {
 /**
  * Release an idle Agent so its persistence write handle closes and the files
  * can be deleted now. The Host exposes no public release seam; an idle Agent's
- * scope disposer is the only handle left to us. A running Agent, pending input,
- * or a missing disposer returns false, and the caller queues the deletion.
+ * scope disposer is the only handle left to us.
+ *
+ * @returns {Promise<{ ok: boolean, reason: string }>} `ok` once the registry no
+ *   longer holds the Agent; otherwise the first blocking condition, so the
+ *   pending queue records why the files must wait for the next Host start.
  */
 async function releaseIdleAgent(ctx, sessionId) {
   const agent = ctx.agents.get(sessionId);
-  if (agent === undefined) return true;
-  if (agent.status === 'running') return false;
-  if ((agent.inbox?.nextTurn?.length ?? 0) > 0 || (agent.inbox?.nextStep?.length ?? 0) > 0) return false;
-  const dispose = agent.scope?.rawDispose;
-  if (typeof dispose !== 'function') return false;
+  if (agent === undefined) return { ok: true, reason: 'none' };
+  if (agent.status === 'running') return { ok: false, reason: 'running' };
+  if ((agent.inbox?.nextTurn?.length ?? 0) > 0 || (agent.inbox?.nextStep?.length ?? 0) > 0) {
+    return { ok: false, reason: 'inbox' };
+  }
+  // `scope.dispose` quiesces the scope fiber including its async teardown;
+  // `rawDispose` is the bare disposer kept for a scope built without the
+  // wrapper. Neither is a documented seam, so both are tried and the caller
+  // records which one was missing.
+  const scope = agent.scope;
+  const dispose = typeof scope?.dispose === 'function'
+    ? scope.dispose.bind(scope)
+    : scope?.rawDispose;
+  if (typeof dispose !== 'function') return { ok: false, reason: 'no-dispose' };
   try {
     await dispose();
   } catch (error) {
-    console.warn('[session-delete] releasing idle Agent failed for', sessionId, ':', messageOf(error));
-    return false;
+    // The teardown may still have untracked the Agent; the poll below decides.
+    if (ctx.agents.get(sessionId) === undefined) return { ok: true, reason: 'none' };
+    const message = messageOf(error);
+    console.warn('[session-delete] releasing idle Agent failed for', sessionId, ':', message);
+    return { ok: false, reason: `dispose-threw: ${message}` };
   }
   for (let attempt = 0; attempt < 50; attempt += 1) {
-    if (ctx.agents.get(sessionId) === undefined) return true;
+    if (ctx.agents.get(sessionId) === undefined) return { ok: true, reason: 'none' };
     await delay(20);
   }
-  return ctx.agents.get(sessionId) === undefined;
+  return { ok: false, reason: 'still-registered' };
 }
 
 async function releaseHandles(handles) {
@@ -270,16 +285,19 @@ async function deleteSession(ctx, requestedId, options = {}) {
   }
 
   let liveActor;
+  let liveReason = 'agent';
   for (const sessionId of targets) {
-    if (await releaseIdleAgent(ctx, sessionId)) continue;
+    const released = await releaseIdleAgent(ctx, sessionId);
+    if (released.ok) continue;
     liveActor = sessionId;
+    liveReason = `agent: ${released.reason}`;
     break;
   }
   if (liveActor !== undefined) {
     if (options.fromQueue) {
-      return { queued: true, sessionId: liveActor, reason: 'agent', activity: [], archived: true };
+      return { queued: true, sessionId: liveActor, reason: liveReason, activity: [], archived: true };
     }
-    return { ...(await queueDeletion(ctx, requestedId, 'agent', [])), warnings };
+    return { ...(await queueDeletion(ctx, requestedId, liveReason, [])), warnings };
   }
 
   const root = sessionsRoot();
@@ -382,6 +400,7 @@ async function runPurge(ctx) {
         keep.push(entry.sessionId);
         await enqueuePending(file, entry.sessionId, {
           attempts: (entry.attempts ?? 0) + 1,
+          reason: result.reason,
           lastError: result.reason,
         });
         continue;

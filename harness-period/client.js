@@ -234,6 +234,49 @@ window.__ModuleLoader__.load({
         }, periodText));
     }
 
+    /**
+     * One-shot self-check: probes the shipped anchors this plugin builds on so
+     * a Harness upgrade reports what moved instead of failing silently. Runs
+     * once after the first paint (one bounded retry while the shell mounts),
+     * then never again — no timer, no observer, no recurring cost.
+     */
+    function selfCheck(label, checks) {
+      let runs = 0;
+      const run = () => {
+        runs += 1;
+        const misses = [];
+        for (const check of checks) {
+          let ok = false;
+          try { ok = check.probe() === true; } catch { ok = false; }
+          if (!ok) misses.push(check);
+        }
+        if (runs === 1 && misses.length === checks.length) {
+          setTimeout(run, 1500); // shell not mounted yet is not a broken anchor
+          return;
+        }
+        // Keep the last result where a human can read it without DevTools:
+        // localStorage['dsh.self-check'] holds one entry per plugin.
+        try {
+          const key = 'dsh.self-check';
+          const all = JSON.parse(localStorage.getItem(key) ?? '{}');
+          all[label] = {
+            ok: misses.length === 0,
+            misses: misses.map((m) => ({ anchor: m.anchor, impact: m.impact })),
+            at: Date.now(),
+          };
+          localStorage.setItem(key, JSON.stringify(all));
+        } catch {
+          // Storage unavailable: the console warning still carries the result.
+        }
+        if (misses.length === 0) return;
+        console.warn('[' + label + '] 自检：' + misses.length + ' 处官方锚点变了，受影响的功能：');
+        for (const miss of misses) console.warn('  · ' + miss.anchor + ' → ' + miss.impact);
+        console.warn('[' + label + '] 修复参照 经验文档/插件开发.md「升级后失效排查」。');
+      };
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+      else setTimeout(run, 16);
+    }
+
     return {
       inject: ['slots', 'locale'],
       apply(ctx) {
@@ -297,6 +340,12 @@ window.__ModuleLoader__.load({
           t: pickT(props.t),
           clock,
         }))));
+
+        selfCheck(NS, [{
+          anchor: '输入框 contenteditable',
+          impact: '峰谷提示不显示',
+          probe: () => document.querySelector('[contenteditable="true"]') !== null,
+        }]);
       },
     };
   },

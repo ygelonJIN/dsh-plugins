@@ -1,4 +1,4 @@
-import { readFile, stat } from 'node:fs/promises';
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
@@ -18,6 +18,20 @@ export const name = 'workspace-ledger';
 export const inject = ['connection', 'sessionQuery', 'subprocess'];
 
 const LEDGER_PATH = '/api/workspace-ledger.summary';
+
+/** Shared self-check record: the Settings → Plugins tab reads these files. */
+const SELF_CHECK_DIR = join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'storages', 'self-check');
+
+/** Persist this plugin's one-shot self-check result; never throws. */
+async function writeSelfCheck(label, misses) {
+  await mkdir(SELF_CHECK_DIR, { recursive: true });
+  await writeFile(
+    join(SELF_CHECK_DIR, label + '.json'),
+    JSON.stringify({ ok: misses.length === 0, misses, at: Date.now() }, null, 2),
+    { mode: 0o600 },
+  );
+}
+
 const GIT_TIMEOUT_MS = 15000;
 const GIT_STDOUT_BYTES = 8 * 1024 * 1024;
 const GIT_STDERR_BYTES = 8 * 1024;
@@ -250,6 +264,23 @@ async function ledgerPayload(scope, request) {
 }
 
 export function apply(ctx) {
+  // One-shot self-check: a renamed Service leaves the summary route dead with
+  // no visible error, so report it once at activation (console + the shared
+  // <DSH_HOME>/storages/self-check file the Settings panel reads).
+  const misses = [];
+  for (const service of ['connection', 'sessionQuery', 'subprocess']) {
+    const value = typeof ctx.get === 'function' ? ctx.get(service) : undefined;
+    if (value === undefined) {
+      misses.push({
+        anchor: 'Service ' + service,
+        impact: '/api/workspace-ledger.summary 不可用',
+      });
+    }
+  }
+  void writeSelfCheck('workspace-ledger', misses).catch(() => {});
+  for (const miss of misses) {
+    console.warn('[workspace-ledger] 自检：' + miss.anchor + ' 不存在 → ' + miss.impact);
+  }
   ctx.connection.fetch.register({
     path: LEDGER_PATH,
     methods: ['GET'],

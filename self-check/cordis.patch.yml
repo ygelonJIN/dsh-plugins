@@ -1,0 +1,9 @@
+# 自检面板：设置 → 插件里的「自检」页签。
+#
+# 纯客户端：没有宿主半。每个插件的自检结果由各自的 client.js 写进
+# localStorage['dsh.self-check']（{ ok, misses, at }），这个页签只负责读和展示；
+# 宿主半（workspace-ledger / approval-alert）没有浏览器环境，结果写
+# <DSH_HOME>/storages/self-check/<name>.json，页面底部给出路径提示。
+- insert:
+    - id: self-check
+      name: '@local/self-check'

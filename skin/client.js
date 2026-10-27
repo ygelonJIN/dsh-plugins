@@ -193,14 +193,16 @@ window.__ModuleLoader__.load({
     const TITLE_SEPARATOR = ' — ';
 
     // 品牌默认值：名称两段、标语、图标路径、主色。
+    // 定稿主题：这些值原本只存在浏览器 localStorage['dsh.skin.look'] 里，
+    // 现在写进代码，清缓存 / 换机器 / 重装都回到这一套。
     const LOOK_DEFAULT = {
       lead: 'ygelon',
       tail: 'Harness',
       slogan: 'All For Humans',
       icon: ICON_PATH,
-      seed: DEFAULT_SEED,
-      surfaces: {},
-      alphas: {},
+      seed: 'oklch(0.99 0 0)',
+      surfaces: { card: 'oklch(0.9931 0 0)' },
+      alphas: { base: 0, seat: 0, sidebar: 0, groupCard: 0, dialog: 100, card: 6 },
       paint: {},
       follow: false,
     };

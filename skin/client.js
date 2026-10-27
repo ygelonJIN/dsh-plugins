@@ -940,8 +940,9 @@ html [class*="composerSeat"] button[class*="_primary"]{
 html [class*="_markdown"] :not(pre)>code{background-color:${GLASS30}}
 /* 思考过程的内容块：官方只给了 padding，没有自己的底色。 */
 [class*="thinkBody"]{background-color:transparent}
-/* 思考块整体（头部 + 内容）一块 30% 白，带圆角；:has 命中的是 thinkBody 的直接父级。 */
-:has(> [class*="thinkBody"]){background-color:${GLASS30};border-radius:12px;overflow:hidden}
+/* 思考块：用官方写在根上的 data-variant="think" 命中整体（折叠时也成立），
+   头（DisclosureRow）和内容区共用这一层 30% 白 + 圆角。 */
+[data-variant="think"]{background-color:${GLASS30};border-radius:12px;overflow:hidden}
 /* 输入框光标：官方写的是 caret-color: var(--dsw-alias-state-business-primary)，
    主色一旦调成白色/极浅色，光标就跟背景同色、直接看不见。这里固定成文字色。 */
 html [class*="composerSeat"] [contenteditable="true"]{caret-color:var(--dsw-alias-label-primary)}

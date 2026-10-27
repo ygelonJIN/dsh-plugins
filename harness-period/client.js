@@ -33,11 +33,12 @@ window.__ModuleLoader__.load({
     };
 
     // 只用主题 token，不加背景、边框或图标。
-    // 低价用 1017 标签的蓝（Tag tone="info"），高价用红色（Tag tone="danger"）。
+    // 高低价同色：都取 1017（Tag tone="info"）那支蓝，跟着品牌色阶走；
+    // 强调级别只靠文案，不用红色（用户要求去掉红绿，改“随主题变化”）。
     const CSS = `
 .hp-tag{display:inline-flex;align-items:center;border-radius:999px;corner-shape:round;padding:1px 8px;font-size:11px;line-height:17px;font-weight:500;white-space:nowrap}
 .hp-tag-low{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 10%,transparent);color:var(--dsw-alias-state-business-primary)}
-.hp-tag-high{background:color-mix(in srgb,var(--dsw-alias-state-error-primary) 10%,transparent);color:var(--dsw-alias-state-error-primary)}
+.hp-tag-high{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 10%,transparent);color:var(--dsw-alias-state-business-primary)}
 .hp-period-control{display:inline-flex;align-items:center;min-width:0;margin-left:auto;padding:0 2px}
 `;
 

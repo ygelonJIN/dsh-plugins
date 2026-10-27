@@ -66,17 +66,17 @@ body{
   --sm-frame-fill:color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent);
   --sm-frame-shadow:0 0 14px rgba(0,0,0,.10);
   --sm-frame-lift:inset 0 1px 0 rgba(255,255,255,.22);
-  --sm-open-fill:color-mix(in srgb,var(--dsw-alias-state-business-primary) 25%,transparent);
-  --sm-run-fill:color-mix(in srgb,var(--dsw-alias-state-business-primary) 12%,transparent);
+  --sm-open-fill:color-mix(in srgb,var(--dsw-alias-state-business-primary) 30%,transparent);
+  --sm-run-fill:color-mix(in srgb,var(--dsw-alias-state-business-primary) 15%,transparent);
 }
-[data-row-key][data-row-key][data-sm-running]:not([aria-selected=true]){background:var(--sm-run-fill,color-mix(in srgb,var(--dsw-alias-state-business-primary) 12%,transparent))}
+[data-row-key][data-row-key][data-sm-running]:not([aria-selected=true]){background:var(--sm-run-fill,color-mix(in srgb,var(--dsw-alias-state-business-primary) 15%,transparent))}
 /* 跑完还没看（官方 completionUnread → 状态点 data-state=done）的会话行同色同浓度。
    注意 StateDot 只有 ongoing 是 svg，done/idle/warning 都是 span，所以这里不能写 svg[...]。 */
-[data-row-key^=session][data-row-key][data-row-key]:not([aria-selected=true]):has([data-state=done]){background:var(--sm-run-fill,color-mix(in srgb,var(--dsw-alias-state-business-primary) 12%,transparent))}
+[data-row-key^=session][data-row-key][data-row-key]:not([aria-selected=true]):has([data-state=done]){background:var(--sm-run-fill,color-mix(in srgb,var(--dsw-alias-state-business-primary) 15%,transparent))}
 [data-row-key][data-sm-running]:not([data-sm-mark]) [data-sm-title]{color:var(--dsw-alias-state-business-primary);font-weight:600}
 [data-row-key][data-sm-running][data-sm-mark] [data-sm-title]{font-weight:600}
 [data-row-key][data-sm-mark] [data-sm-title]{text-decoration:underline;text-decoration-color:#000;text-decoration-thickness:2px;text-underline-offset:3px}
-[data-row-key][data-row-key][aria-selected=true]{background:var(--sm-open-fill,color-mix(in srgb,var(--dsw-alias-state-business-primary) 25%,transparent))}
+[data-row-key][data-row-key][aria-selected=true]{background:var(--sm-open-fill,color-mix(in srgb,var(--dsw-alias-state-business-primary) 30%,transparent))}
 [data-row-key][data-row-key][aria-selected=true] [data-sm-title]{color:var(--dsw-alias-label-primary);font-weight:700}
 [data-row-key^=session] svg[data-state=ongoing]{color:var(--dsw-alias-state-business-primary);transform:scale(1.25)}
 .sm-run{display:inline-flex;align-items:center;gap:2px;height:20px;flex:none;color:var(--dsw-alias-state-business-primary)}

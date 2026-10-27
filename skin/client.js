@@ -962,6 +962,21 @@ html [class*="_markdown"] :not(pre)>code{background-color:${GLASS30}}
 [class*="_block_8z71b"]{background-color:${GLASS30};border-radius:12px;overflow:hidden}
 [class*="_header_8z71b"],
 [class*="_output_8z71b"]{background-color:transparent!important}
+/* ── 下面这一组把 sidebar-marks / harness-period 的视觉值也收进皮肤 ──
+   那两个插件只留结构与交互，颜色一律由这里给；html body 提一级，
+   保证压过它们自己写在 body{} 里的同名变量。 */
+html body{
+  --sm-open-fill:rgba(255,255,255,.65);
+  --sm-run-fill:rgba(255,255,255,.25);
+  --sm-frame:color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent);
+  --sm-frame-fill:color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent);
+  --sm-frame-shadow:0 0 14px rgba(0,0,0,.10);
+  --sm-frame-lift:inset 0 1px 0 rgba(255,255,255,.22)
+}
+html .hp-tag-low,html .hp-tag-high{
+  background-color:color-mix(in srgb,var(--dsw-alias-label-primary) 12%,transparent);
+  color:var(--dsw-alias-label-primary)
+}
 /* 侧栏里的图标按钮（含工作区行右侧的“+ 新会话”、省略号）：30% 白底 + 圆角。 */
 [class*="sidebarCol"] [class*="_iconButton"]{
   background-color:rgba(255,255,255,.3);border-radius:8px

@@ -959,9 +959,10 @@ html [class*="_markdown"] :not(pre)>code{background-color:${GLASS30}}
 /* Desktop 聊天里的“执行命令”是 web 前端自己的命令块（不是 ui-tool 的 data-tool），
    类名带构建期 hash：block/header/output = _xxx_8z71b_NN。整块 30% 白 + 圆角，
    内部行透明。hash 会随官方升级变，届时按新 hash 替换即可。 */
-[class*="_block_8z71b"]{background-color:${GLASS30};border-radius:12px;overflow:hidden}
-[class*="_header_8z71b"],
-[class*="_output_8z71b"]{background-color:transparent!important}
+/* 用 local 名定位，不写构建 hash：命令块的根一定含 _command_ 这个内层类，
+   用 :has 反查最近的 [_block_] 容器即可，hash 变了也照样命中。 */
+[class*="_block_"]:has([class*="_command_"]){background-color:${GLASS30};border-radius:12px;overflow:hidden}
+[class*="_block_"]:has([class*="_command_"]) *{background-color:transparent!important}
 /* ── 下面这一组把 sidebar-marks / harness-period 的视觉值也收进皮肤 ──
    那两个插件只留结构与交互，颜色一律由这里给；html body 提一级，
    保证压过它们自己写在 body{} 里的同名变量。 */
@@ -1796,6 +1797,12 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
           console.warn('[ygelon] slogan fallback install failed', error);
         }
 
+        /** 内容类锚点只在有消息时才算数：空白会话里这些元素本来就不存在。 */
+        const whenChat = (selector) => () => {
+          if (document.querySelector('[data-chat-turn]') === null) return true;
+          return document.querySelector(selector) !== null;
+        };
+
         selfCheck('ygelon', [
           {
             anchor: '页面标题 head > title',
@@ -1809,8 +1816,78 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
           },
           {
             anchor: 'body 上的 --dsw-alias-bg-base',
-            impact: '外观页改了颜色也不会生效（token 名变了）',
+            impact: '外观覆盖写不进去（token 名变了）',
             probe: () => getComputedStyle(document.body).getPropertyValue('--dsw-alias-bg-base').trim() !== '',
+          },
+          {
+            anchor: '输入框 [contenteditable]',
+            impact: '输入区那一整套（光标、placeholder、发送按钮、并进去的信息条）失效',
+            probe: () => document.querySelector('[contenteditable="true"]') !== null,
+          },
+          {
+            anchor: '输入区 [data-composer-dock]',
+            impact: '输入框下方信息条不再并入输入卡片',
+            probe: () => document.querySelector('[data-composer-dock]') !== null,
+          },
+          {
+            anchor: '输入区 [class*="composerSeat"]',
+            impact: '输入区品牌色重绑、dock 拼接、白底失效',
+            probe: () => document.querySelector('[class*="composerSeat"]') !== null,
+          },
+          {
+            anchor: '消息气泡 [class*="_bubble"]',
+            impact: '气泡的 65% 白与包边阴影失效',
+            probe: whenChat('[class*="_bubble"]'),
+          },
+          {
+            anchor: '思考块 [data-variant="think"]',
+            impact: '思考块的 30% 白与圆角失效',
+            probe: whenChat('[data-variant="think"]'),
+          },
+          {
+            anchor: '工具行 [data-tool][data-state]',
+            impact: '工具行的透明底与描边失效',
+            probe: whenChat('[data-tool][data-state]'),
+          },
+          {
+            anchor: '命令块 [class*="_command_"]',
+            impact: '执行命令块的 30% 白与圆角失效（local 名或结构变了）',
+            probe: whenChat('[class*="_command_"]'),
+          },
+          {
+            anchor: '代码块 [class*="md-code-block"]',
+            impact: '代码块主体/语言条的 30% 白失效',
+            probe: whenChat('[class*="md-code-block"]'),
+          },
+          {
+            anchor: '代码块语言条 [data-code-block-banner]',
+            impact: '语言条不再单独上色',
+            probe: whenChat('[data-code-block-banner]'),
+          },
+          {
+            anchor: '已编辑文件 [data-changed-files]',
+            impact: '已编辑文件的头/身配色失效',
+            probe: whenChat('[data-changed-files]'),
+          },
+          {
+            anchor: '交付文件 [data-presented-file]',
+            impact: '交付文件的底色接管失效',
+            probe: whenChat('[data-presented-file]'),
+          },
+          {
+            anchor: '行内代码 [class*="_markdown"] code',
+            impact: '行内代码的 30% 白失效',
+            probe: whenChat('[class*="_markdown"] :not(pre) > code'),
+          },
+          {
+            anchor: '侧栏列 [class*="sidebarCol"]',
+            impact: '侧栏透明度、行底色、图标按钮的规则全部失效',
+            probe: () => document.querySelector('[class*="sidebarCol"]') !== null,
+          },
+          {
+            anchor: '侧栏行 data-row-key',
+            impact: '行选中/运行/完成的三态样式失效',
+            probe: () => document.querySelector('[data-row-key^="session:"]') !== null,
           },
         ]);
       },

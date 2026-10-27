@@ -945,6 +945,27 @@ html [class*="_markdown"] :not(pre)>code{background-color:${GLASS30}}
 /* 思考块：用官方写在根上的 data-variant="think" 命中整体（折叠时也成立），
    头（DisclosureRow）和内容区共用这一层 30% 白 + 圆角。 */
 [data-variant="think"]{background-color:${GLASS30};border-radius:12px;overflow:hidden}
+/* 工具调用行（运行命令、读文件、搜索…）：官方把 data-tool + data-state 写在根上，
+   和思考块同一套：整块 30% 白 + 圆角，内部输出区不再单独上色。 */
+/* 工具行照抄「已编辑文件」那张卡片的层次：本体透明 + 发丝描边，
+   头（DisclosureRow）和身（输出区）各自 30% 白，所以透出来的观感一致。 */
+[data-tool][data-state]{
+  background-color:transparent!important;
+  border:.5px solid var(--dsw-alias-border-l2);
+  border-radius:12px;overflow:hidden
+}
+/* 先把内部所有底色清掉，整行只剩文字 —— 用来验证锚点是否命中。 */
+[data-tool][data-state] *{background-color:transparent!important}
+/* Desktop 聊天里的“执行命令”是 web 前端自己的命令块（不是 ui-tool 的 data-tool），
+   类名带构建期 hash：block/header/output = _xxx_8z71b_NN。整块 30% 白 + 圆角，
+   内部行透明。hash 会随官方升级变，届时按新 hash 替换即可。 */
+[class*="_block_8z71b"]{background-color:${GLASS30};border-radius:12px;overflow:hidden}
+[class*="_header_8z71b"],
+[class*="_output_8z71b"]{background-color:transparent!important}
+/* 侧栏里的图标按钮（含工作区行右侧的“+ 新会话”、省略号）：30% 白底 + 圆角。 */
+[class*="sidebarCol"] [class*="_iconButton"]{
+  background-color:rgba(255,255,255,.3);border-radius:8px
+}
 /* 输入框光标：官方写的是 caret-color: var(--dsw-alias-state-business-primary)，
    主色一旦调成白色/极浅色，光标就跟背景同色、直接看不见。这里固定成文字色。 */
 html [class*="composerSeat"] [contenteditable="true"]{caret-color:var(--dsw-alias-label-primary)}

@@ -1,0 +1,28 @@
+--- client.js.bak-rewind-20261027	2026-10-26 21:36:32
++++ client.js	2026-10-27 10:24:47
+@@ -8761,21 +8761,10 @@
+ 				id: "dsh-purge-dock",
+ 				order: 50,
+ 			}, () => h(react.Fragment, null, h(WelcomeNotice), h(PurgeLauncher), h(PurgeDock), h(HeroNewSessionMount), h(TabRowPurgeMount), h(EnvAdaptSendGate))));
+-			try {
+-				if (typeof ctx.inject === "function") {
+-					ctx.inject(["sessions", "uiWorkspace", "workspaces", "conversation"], (host) => installRewindUi(host));
+-				} else if (ctx.sessions) {
+-					installRewindUi(ctx);
+-				}
+-			} catch (e) {
+-				try {
+-					if (typeof ctx.inject === "function") {
+-						ctx.inject(["sessions", "uiWorkspace", "conversation"], (host) => installRewindUi(host));
+-					}
+-				} catch (e2) {
+-					try { console.warn("[dsh-purge] rewind ui skipped:", e2 || e); } catch { /* ignore */ }
+-				}
+-			}
++			// 本机修改（2026-10-27）：删除输入框右侧「回退」入口。
++			// 原实现通过 ctx.inject([...], installRewindUi) 注册 conversation.input.right
++			// 的 dsh-purge-rewind 槽位；现不再调用。函数与组件保留为死代码。
++			// 恢复：用 client.js.bak-rewind-20261027 覆盖本文件即可。
+ 		}
+ 
+ 		exports.name = name;

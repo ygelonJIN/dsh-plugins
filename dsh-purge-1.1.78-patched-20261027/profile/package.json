@@ -1,0 +1,32 @@
+{
+  "name": "dsh-profile-desktop",
+  "private": true,
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "@deepseek-ai/dsh-experimental-inspector-profile",
+        "@local/workspace-ledger",
+        "@local/usage-cost",
+        "@local/harness-period",
+        "@local/approval-alert",
+        "@local/skin",
+        "@local/session-delete",
+        "@local/session-undo",
+        "@local/sidebar-marks"
+      ]
+    }
+  },
+  "dependencies": {
+    "@local/approval-alert": "link:/Volumes/TUF ESD-T1A Media/dsh-plugins/approval-alert",
+    "@local/harness-period": "link:/Volumes/TUF ESD-T1A Media/dsh-plugins/harness-period",
+    "@local/session-delete": "link:/Volumes/TUF ESD-T1A Media/dsh-plugins/session-delete",
+    "@local/session-undo": "link:/Volumes/TUF ESD-T1A Media/dsh-plugins/session-undo",
+    "@local/sidebar-marks": "link:/Volumes/TUF ESD-T1A Media/dsh-plugins/sidebar-marks",
+    "@local/skin": "link:/Volumes/TUF ESD-T1A Media/dsh-plugins/skin",
+    "@local/usage-cost": "link:/Volumes/TUF ESD-T1A Media/dsh-plugins/usage-cost",
+    "@local/workspace-ledger": "link:/Volumes/TUF ESD-T1A Media/dsh-plugins/workspace-ledger",
+    "dsh-purge": "https://codeload.github.com/YuJunZhiXue/dsh-purge/tar.gz/refs/heads/master"
+  }
+}

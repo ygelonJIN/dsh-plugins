@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Ygelon 品牌皮肤：侧栏、空会话标志与标语、浏览器标题和 favicon",
+  "description": "Ygelon 品牌皮肤：侧栏、空会话标志与标语、浏览器标题和 favicon，以及主色派生成套色阶的配色页",
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
@@ -26,7 +26,8 @@
       "immediately": true,
       "inject": [
         "@deepseek-ai/dsh-client-ui-sidebar",
-        "@deepseek-ai/dsh-client-ui-conversation"
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-settings-plugins"
       ]
     }
   }

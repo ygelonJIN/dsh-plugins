@@ -44,23 +44,39 @@ window.__ModuleLoader__.load({
     /*
      * Visual hierarchy in the sidebar: the open conversation is the most
      * prominent (light fill only — no side bar), a mark is a black underline
-     * under the name and never a fill, a running row adds its accent spinner
-     * and a heavier title, and a running Workspace also shows the running
-     * count. Each Workspace group is wrapped in a thin white frame: the
-     * Workspace row plus its session rows when expanded, the row alone when
-     * collapsed. The rules cascade in exactly that order: the running block
+     * under the name and never a fill, a running row adds its accent spinner,
+     * a heavier title, and a much lighter tint of the same fill (half the
+     * open row's strength), and a running Workspace also shows the running
+     * count. Only an expanded Workspace group is wrapped in a thin white
+     * frame (the row plus its session rows); a collapsed Workspace stays
+     * bare. The rules cascade in exactly that order: the running block
      * first, marks over it, the open row last.
      */
     const CSS = `
 :root{
   --sm-red:#e5484d;--sm-orange:#f76b15;--sm-yellow:#c58a00;
   --sm-green:#2f9e6c;--sm-blue:#4176e6;--sm-purple:#8e4ec6;
-  --sm-frame:rgba(255,255,255,.92);
 }
+/* Every --dsw-alias-* token is declared on body, never on :root, and a
+   custom property resolves its var() where it is declared. Declaring these
+   on :root therefore made them invalid everywhere below html. They belong
+   on body, and the rules below still carry an inline fallback. */
+body{
+  --sm-frame:color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent);
+  --sm-frame-fill:color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent);
+  --sm-frame-shadow:0 0 14px rgba(0,0,0,.10);
+  --sm-frame-lift:inset 0 1px 0 rgba(255,255,255,.22);
+  --sm-open-fill:color-mix(in srgb,var(--dsw-alias-state-business-primary) 25%,transparent);
+  --sm-run-fill:color-mix(in srgb,var(--dsw-alias-state-business-primary) 12%,transparent);
+}
+[data-row-key][data-row-key][data-sm-running]:not([aria-selected=true]){background:var(--sm-run-fill,color-mix(in srgb,var(--dsw-alias-state-business-primary) 12%,transparent))}
+/* 跑完还没看（官方 completionUnread → 状态点 data-state=done）的会话行同色同浓度。
+   注意 StateDot 只有 ongoing 是 svg，done/idle/warning 都是 span，所以这里不能写 svg[...]。 */
+[data-row-key^=session][data-row-key][data-row-key]:not([aria-selected=true]):has([data-state=done]){background:var(--sm-run-fill,color-mix(in srgb,var(--dsw-alias-state-business-primary) 12%,transparent))}
 [data-row-key][data-sm-running]:not([data-sm-mark]) [data-sm-title]{color:var(--dsw-alias-state-business-primary);font-weight:600}
 [data-row-key][data-sm-running][data-sm-mark] [data-sm-title]{font-weight:600}
 [data-row-key][data-sm-mark] [data-sm-title]{text-decoration:underline;text-decoration-color:#000;text-decoration-thickness:2px;text-underline-offset:3px}
-[data-row-key][data-row-key][aria-selected=true]{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 14%,transparent)}
+[data-row-key][data-row-key][aria-selected=true]{background:var(--sm-open-fill,color-mix(in srgb,var(--dsw-alias-state-business-primary) 25%,transparent))}
 [data-row-key][data-row-key][aria-selected=true] [data-sm-title]{color:var(--dsw-alias-label-primary);font-weight:700}
 [data-row-key^=session] svg[data-state=ongoing]{color:var(--dsw-alias-state-business-primary);transform:scale(1.25)}
 .sm-run{display:inline-flex;align-items:center;gap:2px;height:20px;flex:none;color:var(--dsw-alias-state-business-primary)}
@@ -70,11 +86,15 @@ window.__ModuleLoader__.load({
 .sm-spin-track,.sm-spin-arc{fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
 .sm-spin-track{opacity:.25}
 @keyframes sm-spin-rotate{to{transform:rotate(360deg)}}
-[data-sm-frame=group]{box-sizing:border-box;border:1px solid var(--sm-frame);border-radius:10px;padding:2px}
-[data-row-key][data-sm-frame]{box-sizing:border-box;margin-top:0;margin-bottom:0;border-left:1px solid var(--sm-frame);border-right:1px solid var(--sm-frame);border-radius:0}
-[data-row-key][data-sm-frame=first]{border-top:1px solid var(--sm-frame);border-radius:10px 10px 0 0}
-[data-row-key][data-sm-frame=last]{border-bottom:1px solid var(--sm-frame);border-radius:0 0 10px 10px;margin-bottom:6px}
-[data-row-key][data-sm-frame=only]{border-top:1px solid var(--sm-frame);border-bottom:1px solid var(--sm-frame);border-radius:10px;margin-bottom:6px}
+[data-sm-frame=group]{box-sizing:border-box;border:1px solid var(--sm-frame,color-mix(in srgb,currentColor 22%,transparent));border-radius:12px;padding:3px;margin-bottom:18px;background:var(--sm-frame-fill,color-mix(in srgb,currentColor 5%,transparent));box-shadow:var(--sm-frame-lift,inset 0 1px 0 rgba(255,255,255,.22)),var(--sm-frame-shadow,0 0 14px rgba(0,0,0,.10))}
+[data-sm-list][data-sm-list]{padding-top:8px}
+[data-row-key][data-sm-frame]{box-sizing:border-box;margin-top:0;margin-bottom:0;border-left:1px solid var(--sm-frame,color-mix(in srgb,currentColor 22%,transparent));border-right:1px solid var(--sm-frame,color-mix(in srgb,currentColor 22%,transparent));border-radius:0}
+[data-row-key][data-sm-frame=first]{border-top:1px solid var(--sm-frame,color-mix(in srgb,currentColor 22%,transparent));border-radius:12px 12px 0 0}
+[data-row-key][data-sm-frame=last]{border-bottom:1px solid var(--sm-frame,color-mix(in srgb,currentColor 22%,transparent));border-radius:0 0 12px 12px;margin-bottom:6px}
+[data-row-key][data-sm-frame=only]{border-top:1px solid var(--sm-frame,color-mix(in srgb,currentColor 22%,transparent));border-bottom:1px solid var(--sm-frame,color-mix(in srgb,currentColor 22%,transparent));border-radius:12px;margin-bottom:6px}
+/* 官方 ScrollRestore 会 cloneNode 正在离场的行（clone 去掉 data-row-key、加 inert）来跑退出动画，
+   徽标也跟着被复制；克隆体里的转圈不该再转一次。 */
+[inert] .sm-run{display:none}
 @media (prefers-reduced-motion:reduce){.sm-spin-motion{animation:none}}
 `;
 
@@ -337,22 +357,55 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * One thin frame per Workspace group. The frame goes on the official group
-     * container — one box, straight sides, rounded corners — and rows rendered
-     * without such a container fall back to a connected per-row frame.
+     * Whether a Workspace group is open. The row's own flag is authoritative;
+     * the fallback reads the rows the shipped browser renders only for an open
+     * group, so a DOM change to the attribute cannot hide a real box.
+     */
+    function groupExpanded(row, container) {
+      const flag = row.getAttribute('aria-expanded');
+      if (flag === 'true') return true;
+      if (flag === 'false') return false;
+      const scope = container ?? row.parentElement;
+      if (scope === null || scope === row) return false;
+      return scope.querySelector('[data-row-key^="session:"], [data-row-key^="overflow:"]') !== null;
+    }
+
+    /** The sidebar list clips card shadows at its edges (overflow-y: auto), so
+     * the first card's shadow needs headroom inside the list to render. */
+    function markListContainer(container) {
+      let node = container.parentElement;
+      while (node !== null && node !== document.body) {
+        if (node.hasAttribute?.('data-sm-list')) return;
+        const overflow = typeof getComputedStyle === 'function' ? getComputedStyle(node).overflowY : '';
+        if (overflow === 'auto' || overflow === 'scroll') {
+          node.setAttribute('data-sm-list', '');
+          return;
+        }
+        node = node.parentElement;
+      }
+    }
+
+    /**
+     * One thin frame per expanded Workspace group. The frame goes on the
+     * official group container — one box, straight sides, rounded corners —
+     * and rows rendered without such a container fall back to a connected
+     * per-row frame. Collapsed Workspaces stay unframed either way.
      */
     function decorateFrames() {
       const rows = [...document.querySelectorAll('[data-row-key]')];
       for (const row of rows) row.removeAttribute('data-sm-frame');
       for (const stale of document.querySelectorAll('[data-sm-frame="group"]')) stale.removeAttribute('data-sm-frame');
-      const framed = new Set();
+      // Containers are claimed even when left bare, so the per-row fallback
+      // below never rebuilds a box around a single collapsed row.
+      const claimed = new Set();
       for (const row of rows) {
         const key = row.getAttribute('data-row-key') ?? '';
         if (!key.startsWith('workspace:')) continue;
         const container = groupContainer(row);
-        if (container === null || framed.has(container)) continue;
-        framed.add(container);
-        container.setAttribute('data-sm-frame', 'group');
+        if (container === null || claimed.has(container)) continue;
+        claimed.add(container);
+        markListContainer(container);
+        if (groupExpanded(row, container)) container.setAttribute('data-sm-frame', 'group');
       }
       let group = [];
       const flush = () => {
@@ -360,6 +413,13 @@ window.__ModuleLoader__.load({
         group = [];
         if (members.length === 0) return;
         const [first, ...rest] = members;
+        // Without a group container the spread of rows is the only signal: a
+        // Workspace that owns no session rows is collapsed and stays bare.
+        if ((first.getAttribute('data-row-key') ?? '').startsWith('workspace:')) {
+          const flag = first.getAttribute('aria-expanded');
+          if (flag === 'false') return;
+          if (flag !== 'true' && rest.length === 0) return;
+        }
         // Nested DOM: the Workspace row already contains its session rows, so
         // framing the outer row alone wraps the whole group.
         if (rest.length > 0 && rest.every((row) => first.contains(row))) {
@@ -373,7 +433,7 @@ window.__ModuleLoader__.load({
         });
       };
       for (const row of rows) {
-        if (framed.has(groupContainer(row))) continue;
+        if (claimed.has(groupContainer(row))) continue;
         const key = row.getAttribute('data-row-key') ?? '';
         if (key.startsWith('workspace:')) {
           flush();
@@ -516,6 +576,49 @@ window.__ModuleLoader__.load({
       });
     }
 
+    /**
+     * One-shot self-check: probes the shipped anchors this plugin builds on so
+     * a Harness upgrade reports what moved instead of failing silently. Runs
+     * once after the first paint (one bounded retry while the shell mounts),
+     * then never again — no timer, no observer, no recurring cost.
+     */
+    function selfCheck(label, checks) {
+      let runs = 0;
+      const run = () => {
+        runs += 1;
+        const misses = [];
+        for (const check of checks) {
+          let ok = false;
+          try { ok = check.probe() === true; } catch { ok = false; }
+          if (!ok) misses.push(check);
+        }
+        if (runs === 1 && misses.length === checks.length) {
+          setTimeout(run, 1500); // shell not mounted yet is not a broken anchor
+          return;
+        }
+        // Keep the last result where a human can read it without DevTools:
+        // localStorage['dsh.self-check'] holds one entry per plugin.
+        try {
+          const key = 'dsh.self-check';
+          const all = JSON.parse(localStorage.getItem(key) ?? '{}');
+          all[label] = {
+            ok: misses.length === 0,
+            misses: misses.map((m) => ({ anchor: m.anchor, impact: m.impact })),
+            at: Date.now(),
+          };
+          localStorage.setItem(key, JSON.stringify(all));
+        } catch {
+          // Storage unavailable: the console warning still carries the result.
+        }
+        if (misses.length === 0) return;
+        console.warn('[' + label + '] 自检：' + misses.length + ' 处官方锚点变了，受影响的功能：');
+        for (const miss of misses) console.warn('  · ' + miss.anchor + ' → ' + miss.impact);
+        console.warn('[' + label + '] 修复参照 经验文档/插件开发.md「升级后失效排查」。');
+      };
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+      else setTimeout(run, 16);
+    }
+
     return {
       inject: ['slots', 'locale', 'sessions'],
       apply(ctx) {
@@ -531,7 +634,10 @@ window.__ModuleLoader__.load({
 
         ctx.effect(() => {
           if (typeof document === 'undefined') return;
-          if (document.querySelector('style[data-plugin-css="' + STYLE_ID + '"]') !== null) return;
+          // Always mount a fresh tag: an "already exists" early return leaves a
+          // stale stylesheet alive after hot reload, and every CSS tweak after
+          // that silently does nothing.
+          for (const stale of document.querySelectorAll('style[data-plugin-css="' + STYLE_ID + '"]')) stale.remove();
           const tag = document.createElement('style');
           tag.setAttribute('data-plugin-css', STYLE_ID);
           tag.textContent = CSS;
@@ -551,6 +657,12 @@ window.__ModuleLoader__.load({
             let menu = null;
             let rowsChanged = false;
             for (const record of records) {
+              // Opening or closing a Workspace may leave its rows untouched (an
+              // empty group): the expand flag then drives the frame alone.
+              if (record.type === 'attributes') {
+                rowsChanged = true;
+                continue;
+              }
               for (const node of record.addedNodes) {
                 if (!(node instanceof Element)) continue;
                 if (node.matches?.('[role="menu"]')) menu = node;
@@ -568,7 +680,12 @@ window.__ModuleLoader__.load({
             }
             if (rowsChanged) scheduleDecorate();
           });
-          observer.observe(document.body, { childList: true, subtree: true });
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['aria-expanded'],
+          });
           document.addEventListener('pointerdown', trackWorkspaceMenuOpen, true);
           scheduleDecorate();
           return () => {
@@ -635,6 +752,29 @@ window.__ModuleLoader__.load({
           order: 50,
           locale: NS,
         }, MarkOverlay)));
+
+        selfCheck(NS, [
+          {
+            anchor: '侧栏行 data-row-key（会话/工作区）',
+            impact: '标注、卡片框、运行中转圈全部失效',
+            probe: () => document.querySelector('[data-row-key^="session:"], [data-row-key^="workspace:"]') !== null,
+          },
+          {
+            anchor: '工作区分组容器 --dsh-workspace-indent',
+            impact: '工作区卡片框不显示（回退到按行拼框）',
+            probe: () => {
+              const row = document.querySelector('[data-row-key^="workspace:"]');
+              if (row === null) return true; // no Workspace rows: nothing to frame
+              let node = row.parentElement;
+              while (node !== null) {
+                if (typeof node.style?.getPropertyValue === 'function'
+                  && node.style.getPropertyValue('--dsh-workspace-indent') !== '') return true;
+                node = node.parentElement;
+              }
+              return false;
+            },
+          },
+        ]);
       },
     };
   },

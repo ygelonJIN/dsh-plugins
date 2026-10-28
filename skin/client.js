@@ -1069,6 +1069,27 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
      * 走的是另一个变体 `_preview_38jqx_52`（`background:var(--dsw-alias-bg-layer-1)`
      * 且自带 color），本来就不透明、文字正确，不需要动。
      */
+    /**
+     * 深色主题下，「透明白」那几档底色叠在深底上会变成浅灰（侧栏行 85%/45%、代码块 30%），
+     * 而深色主题的文字色是浅的 —— 浅字压浅底，读不出来。这几面既然是白玻璃，
+     * 文字就用黑的。只在深色主题生效，浅色主题本来就是黑字，等于不变。
+     */
+    const DARK_TEXT_RULES = `
+/* 只有垫了白底的行才用黑字：选中 85%、运行中 45%。普通行是侧栏本身的深底，
+   必须留白字（黑字会直接消失）——这一条别放宽成 [data-row-key] *。 */
+body[data-ds-dark-theme] [class*="sidebarCol"] [data-row-key][aria-selected=true],
+body[data-ds-dark-theme] [class*="sidebarCol"] [data-row-key][aria-selected=true] *,
+body[data-ds-dark-theme] [class*="sidebarCol"] [data-row-key][data-sm-running],
+body[data-ds-dark-theme] [class*="sidebarCol"] [data-row-key][data-sm-running] *{color:#000}
+body[data-ds-dark-theme] [class*="sidebarCol"] [data-row-key][aria-selected=true] [data-sm-title],
+body[data-ds-dark-theme] [class*="sidebarCol"] [data-row-key][data-sm-running] [data-sm-title]{text-decoration-color:#000}
+/* 代码块里语法高亮是 shiki 写的**内联 color**，普通选择器压不住，必须 !important；
+   -webkit-text-fill-color 是另一条路（对没被内联占用的部分也生效）。 */
+body[data-ds-dark-theme] [class*="md-code-block"],
+body[data-ds-dark-theme] [class*="md-code-block"] *{color:#000!important;-webkit-text-fill-color:#000}
+body[data-ds-dark-theme] [class*="_markdown"] :not(pre)>code{color:#000!important;-webkit-text-fill-color:#000}
+`;
+
     const OVERLAY_RULES = `
 html[data-ys-overlay-unified] [class*="_card_"][class][class]{
   --dsw-hovercard-bg:linear-gradient(var(--dsw-menu-surface-fill),var(--dsw-menu-surface-fill)),var(--dsw-alias-bg-base);
@@ -1806,7 +1827,7 @@ html[data-ys-overlay-unified] [class*="_card_"][class][class] *{color:inherit}
           for (const stale of document.querySelectorAll('style[data-plugin-css="' + STYLE_ID + '"]')) stale.remove();
           const tag = document.createElement('style');
           tag.setAttribute('data-plugin-css', STYLE_ID);
-          tag.textContent = PALETTE_CSS + PANE_RULES + DOCK_RULES + OVERLAY_RULES;
+          tag.textContent = PALETTE_CSS + PANE_RULES + DOCK_RULES + OVERLAY_RULES + DARK_TEXT_RULES;
           document.head.appendChild(tag);
           return () => tag.remove();
         });

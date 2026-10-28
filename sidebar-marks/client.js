@@ -67,7 +67,7 @@ body{
   --sm-frame-shadow:0 0 14px rgba(0,0,0,.10);
   --sm-frame-lift:inset 0 1px 0 rgba(255,255,255,.22);
   /* 透明白，不跟主色走：浅色/深色主题下都是同一层提亮，主色改成什么都不会串色。 */
-  --sm-open-fill:rgba(255,255,255,.8);
+  --sm-open-fill:rgba(255,255,255,.85);
   --sm-run-fill:rgba(255,255,255,.45);
 }
 [data-row-key][data-row-key][data-sm-running]:not([aria-selected=true]){background:var(--sm-run-fill,rgba(255,255,255,.3))}
@@ -80,7 +80,7 @@ body{
 /* 选中行只改底色：标题颜色、字重、转圈、运行数字都保持平时那样（用户明确要求“字体颜色不要变”）。 */
 /* 选中行永远赢：三重属性抬 specificity，且排在所有运行/完成规则之后；
    “正在运行 + 被选中”必须显示选中的浓度。 */
-[data-row-key][data-row-key][data-row-key][aria-selected=true]{background:var(--sm-open-fill,rgba(255,255,255,.8))!important}
+[data-row-key][data-row-key][data-row-key][aria-selected=true]{background:var(--sm-open-fill,rgba(255,255,255,.85))!important}
 [data-row-key^=session] svg[data-state=ongoing]{color:var(--dsw-alias-label-primary);transform:scale(1.25)}
 .sm-run{display:inline-flex;align-items:center;gap:2px;height:20px;flex:none;color:var(--dsw-alias-label-primary)}
 /* 工作区行的文件夹图标（含当前工作区那份 folderActive）也用文字色，别跟主色跑。 */

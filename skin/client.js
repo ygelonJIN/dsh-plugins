@@ -925,8 +925,11 @@ html[data-ys-sidebar-shadow] [class*="sidebarCol"]{box-shadow:var(--ys-sidebar-s
 /* 输入框卡片与用户消息气泡的包边/阴影，直接跟「工作区卡片」那一套共用变量：
    0 0 14px 匀影 + inset 1px 发丝描边 + 顶部 1px 白高光。没装 sidebar-marks 时
    用等价 fallback，观感一致。html 前缀是为了压过官方同名类规则。 */
+/* 气泡是 75% 白（亮底），深色主题下里面的白字会看不见（附件名、正文都中招）。
+   统一改成黑字；shiki 的行内 color 不带 !important，语法高亮照样保留。 */
+html [class*="_bubble"] *{color:#000}
 html [class*="_bubble"]{
-  background-color:rgba(255,255,255,.65);
+  background-color:rgba(255,255,255,.85);
   box-shadow:
     var(--sm-frame-lift,inset 0 1px 0 rgba(255,255,255,.22)),
     var(--sm-frame-shadow,0 0 14px rgba(0,0,0,.10)),
@@ -976,8 +979,8 @@ html [class*="_markdown"] :not(pre)>code{background-color:${GLASS30}}
    那两个插件只留结构与交互，颜色一律由这里给；html body 提一级，
    保证压过它们自己写在 body{} 里的同名变量。 */
 html body{
-  --sm-open-fill:rgba(255,255,255,.65);
-  --sm-run-fill:rgba(255,255,255,.25);
+  --sm-open-fill:rgba(255,255,255,.8);
+  --sm-run-fill:rgba(255,255,255,.45);
   --sm-frame:color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent);
   --sm-frame-fill:color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent);
   --sm-frame-shadow:0 0 14px rgba(0,0,0,.10);
@@ -1038,6 +1041,41 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
 `;
 
 
+
+    /**
+     * 浮层材质统一：所有弹出层跟账户菜单一样。
+     *
+     * 账户菜单走 MenuSurface：background 读 --dsw-menu-surface-fill，外加
+     * backdrop-filter: var(--dsw-menu-backdrop-filter)（blur(40px) saturate(150%)）。
+     * 而 HoverCard（文件区 / 工作区 / 会话行悬停出来的卡片）自己是这样写的：
+     *   ._card_38jqx_9{ --dsw-hovercard-bg:#2C2C2E; background:var(--dsw-hovercard-bg) }
+     * —— 深灰实色、没有模糊。变量是它**自己声明的**，从 body 写内联压不过，
+     * 只能用规则 + 抬 specificity（双 [class]）覆盖，跟 --changes-fill 是同一个坑。
+     *
+     * 但**光搬半透明色不够**：macOS 上 MenuSurface 底下还垫了一层不透明的
+     * `[data-menu-backing]`（`z-index:-1; background:var(--dsw-alias-bg-base)`，
+     * 只有 `html[data-platform=darwin]` 才 display:block）。所以你看到的“账户菜单不透明”
+     * 是那层底板挡住了后面，不是菜单自己实心。只搬 --dsw-menu-surface-fill 会让悬停卡
+     * 透出底下内容、字看不清。
+     * 做法：把两层一起塞进 background —— 多背景里第一层在上，只有最后一层能带颜色，
+     * 所以菜单色走 linear-gradient 铺在上、bg-base 当不透明底。跟官方 backing 同源，
+     * 用户把对话区调透明时两边一起变。既然底已经不透明，模糊就看不出效果，省掉不做。
+     *
+     * 还有一处必须一起改：**文字色**。卡片的文字是照着深灰底写的（浅色），
+     * 背景一旦变浅就白字浅底、看不清。所以同时把 color 拉回 label-primary，
+     * 并让子元素继承（内部有些行是写死的浅色）。
+     *
+     * 同样带 _card_ 的 markdown 代码块不读这个变量、也不受影响；而「改动文件预览」
+     * 走的是另一个变体 `_preview_38jqx_52`（`background:var(--dsw-alias-bg-layer-1)`
+     * 且自带 color），本来就不透明、文字正确，不需要动。
+     */
+    const OVERLAY_RULES = `
+html[data-ys-overlay-unified] [class*="_card_"][class][class]{
+  --dsw-hovercard-bg:linear-gradient(var(--dsw-menu-surface-fill),var(--dsw-menu-surface-fill)),var(--dsw-alias-bg-base);
+  color:var(--dsw-alias-label-primary)
+}
+html[data-ys-overlay-unified] [class*="_card_"][class][class] *{color:inherit}
+`;
 
     const ALPHA_RULES = [
       { key: 'sidebar', flag: 'data-ys-sidebar', variable: '--ys-sidebar-alpha', targetId: 'sidebar' },
@@ -1730,6 +1768,8 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
             if (touched) root.setAttribute(flag, '');
             else root.removeAttribute(flag);
           };
+          // 浮层统一默认开：悬停卡片跟账户菜单用同一块材质，不跟随“有没有调过菜单色”。
+          root.setAttribute('data-ys-overlay-unified', '');
         };
 
         /** 只重建 token 覆盖 + 自有变量，不动标题/favicon/标语。 */
@@ -1766,7 +1806,7 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
           for (const stale of document.querySelectorAll('style[data-plugin-css="' + STYLE_ID + '"]')) stale.remove();
           const tag = document.createElement('style');
           tag.setAttribute('data-plugin-css', STYLE_ID);
-          tag.textContent = PALETTE_CSS + PANE_RULES + DOCK_RULES;
+          tag.textContent = PALETTE_CSS + PANE_RULES + DOCK_RULES + OVERLAY_RULES;
           document.head.appendChild(tag);
           return () => tag.remove();
         });

@@ -23,6 +23,7 @@ window.__ModuleLoader__.load({
       '@local/session-undo',
       '@local/sidebar-marks',
       '@local/self-check',
+      '@local/prompt-inject',
       '@local/workspace-ledger',
       '@local/approval-alert',
     ];

@@ -8,11 +8,13 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const SRC = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'client.js');
-const ALL = [
-  '@local/usage-cost', '@local/harness-period', '@local/skin', '@local/session-delete',
-  '@local/session-undo', '@local/sidebar-marks', '@local/self-check', '@local/workspace-ledger',
-  '@local/approval-alert',
-];
+
+// 插件名单从源码里读，不在这里再维护一份 —— 否则加插件时两处都要改，忘一处就红。
+const SOURCE = fs.readFileSync(SRC, 'utf8');
+const EXPECTED_BLOCK = SOURCE.match(/const EXPECTED = \[([\s\S]*?)\];/);
+if (EXPECTED_BLOCK === null) throw new Error('没找到 EXPECTED 名单');
+const ALL = [...EXPECTED_BLOCK[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+if (ALL.length === 0) throw new Error('EXPECTED 名单是空的');
 
 /** 造一套最小浏览器环境；ids 就是宿主会注入的 __DSH_BOOT__.entries。 */
 function makeEnv({ version, ids, storage }) {
@@ -123,7 +125,7 @@ const seeded = (overrides = {}) => JSON.stringify({
   activate(env);
   check('首次运行不弹提示', alertCount(env) === 0);
   const watch = watchOf(env);
-  check('首次运行记下版本与插件数', watch?.version === '0.2.1-rc.3' && watch.plugins.length === 9,
+  check('首次运行记下版本与插件数', watch?.version === '0.2.1-rc.3' && watch.plugins.length === ALL.length,
     JSON.stringify(watch));
 }
 
@@ -207,7 +209,7 @@ const seeded = (overrides = {}) => JSON.stringify({
   env.window.__DSH_BOOT__.entries = ALL.map((id) => ({ id }));
   activate(env);
   const watch = watchOf(env);
-  check('entries 结构解析正常', watch?.plugins.length === 9, JSON.stringify(watch));
+  check('entries 结构解析正常', watch?.plugins.length === ALL.length, JSON.stringify(watch));
 }
 
 // 9. 点「知道了」这条链路真的会把基线推进到新版本

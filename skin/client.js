@@ -994,9 +994,9 @@ html [class*="_markdown"] :not(pre)>code{background-color:${GLASS30}}
    那两个插件只留结构与交互，颜色一律由这里给；html body 提一级，
    保证压过它们自己写在 body{} 里的同名变量。 */
 html body{
-  /* 选中行不透明（白底黑字，深色主题下也最跳）；运行/完成未读 60%。 */
+  /* 选中行不透明（白底黑字，深色主题下也最跳）；运行/完成未读 40%。 */
   --sm-open-fill:#fff;
-  --sm-run-fill:rgba(255,255,255,.5);
+  --sm-run-fill:rgba(255,255,255,.4);
   --sm-frame:color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent);
   --sm-frame-fill:color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent);
   --sm-frame-shadow:0 0 14px rgba(0,0,0,.10);

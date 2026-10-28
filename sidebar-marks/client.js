@@ -68,7 +68,7 @@ body{
   --sm-frame-lift:inset 0 1px 0 rgba(255,255,255,.22);
   /* 透明白，不跟主色走：浅色/深色主题下都是同一层提亮，主色改成什么都不会串色。 */
   --sm-open-fill:#fff;
-  --sm-run-fill:rgba(255,255,255,.5);
+  --sm-run-fill:rgba(255,255,255,.4);
 }
 [data-row-key][data-row-key][data-sm-running]:not([aria-selected=true]){background:var(--sm-run-fill,rgba(255,255,255,.5))}
 /* 跑完还没看（官方 completionUnread → 状态点 data-state=done）的会话行同色同浓度。

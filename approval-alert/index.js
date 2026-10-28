@@ -11,8 +11,8 @@ import { fileURLToPath } from 'node:url';
  * 收到后立刻把决定权交给下一位 answerer(桌面 UI),绝不替用户作答。
  *
  * 通知走 vendor/DshNotifier.app:它是 terminal-notifier 的副本,换了
- * DeepSeek Harness 的图标与显示名,所以横幅左侧是 DSH 的鲸鱼图标,
- * 标题显示 "DeepSeek Harness";点通知会把 DSH 带到前台。
+ * ygelon Harness 的图标与显示名,所以横幅左侧是 Y 图标,
+ * 顶部显示 "ygelon Harness";点通知会把 DSH 带到前台。
  */
 
 const NOTIFIER = fileURLToPath(
@@ -88,6 +88,26 @@ function recordSelfCheck(misses) {
   }
 }
 
+/**
+ * The notifier binary can exist and still be silenced by macOS. `-diagnose` is
+ * the only local source of truth (it exits 3 and prints `authorization denied`
+ * when the system switch is off), so run it once at activation and turn a
+ * denial into a self-check miss with a concrete fix. Never blocks the plugin.
+ */
+function diagnoseNotifier(report) {
+  if (process.platform !== 'darwin' || !existsSync(NOTIFIER)) return;
+  execFile(NOTIFIER, ['-diagnose'], { timeout: 6000 }, (error, stdout) => {
+    const match = String(stdout ?? '').match(/authorization\s+(\S+)/);
+    if (match === null || match[1] === 'authorized') return;
+    report({
+      anchor: 'macOS 通知权限 com.deepseek.dsh.notifier',
+      impact: '审批横幅不会弹出（系统里通知被关掉了）',
+      hint: '系统设置 → 通知 → “DeepSeek Harness 提醒” → 允许通知；'
+        + '或 tccutil reset UserNotification com.deepseek.dsh.notifier',
+    });
+  });
+}
+
 export function apply(ctx, config = {}) {
   const options = { ...DEFAULTS, ...config };
   if (options.enabled === false) return;
@@ -107,6 +127,16 @@ export function apply(ctx, config = {}) {
   for (const miss of misses) {
     console.warn('[approval-alert] 自检：' + miss.anchor + ' → ' + miss.impact);
   }
+
+  // macOS 权限是“插件装好了但不弹”的常见原因；只查文件存在发现不了。
+  diagnoseNotifier((miss) => {
+    if (misses.some((item) => item.anchor === miss.anchor)) return;
+    misses.push(miss);
+    recordSelfCheck(misses);
+    console.warn('[approval-alert] 自检：' + miss.anchor + ' → ' + miss.impact);
+    if (miss.hint !== undefined) console.warn('[approval-alert] 修复：' + miss.hint);
+  });
+
   if (typeof ctx.on !== 'function') return;
 
   const lastByTool = new Map();
@@ -125,10 +155,10 @@ export function apply(ctx, config = {}) {
       }
     }
     notifyMac({
-      title: 'DeepSeek Harness',
+      title: 'ygelon Harness',
       subtitle: '需要你的审批 · ' + toolName,
       message: clip(reasonText(request), options.reasonLimit)
-        || '在 DeepSeek Harness 里点「允许」或「拒绝」。',
+        || '在 ygelon Harness 里点「允许」或「拒绝」。',
       sound: typeof options.sound === 'string' ? options.sound : '',
     });
   };

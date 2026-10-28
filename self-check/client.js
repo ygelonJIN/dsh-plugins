@@ -12,10 +12,10 @@ window.__ModuleLoader__.load({
     const WATCH_KEY = 'dsh.self-check.watch';
 
     /**
-     * 仓库里应该被加载的客户端插件。加/删插件时同步改这里；
+     * 有客户端半、会出现在 `__DSH_BOOT__.entries` 里的插件。加/删插件时同步改这里；
      * 少写只会漏报（不弹），多写会误报（弹出来但那个包已经删了）。
      */
-    const EXPECTED = [
+    const CLIENT = [
       '@local/usage-cost',
       '@local/harness-period',
       '@local/skin',
@@ -24,6 +24,15 @@ window.__ModuleLoader__.load({
       '@local/sidebar-marks',
       '@local/self-check',
       '@local/prompt-inject',
+    ];
+
+    /**
+     * 纯宿主插件：没有 `dsh.client`，**永远进不了** `__DSH_BOOT__.entries`。
+     * 把它们算进客户端名单就会永久误报「没加载」（0.2.1-rc.3 踩过）。
+     * 它们的结果由各自的宿主半写 `<DSH_HOME>/storages/self-check/*.json`，
+     * 面板通过宿主路由 `api/self-check.host` 读。
+     */
+    const HOST = [
       '@local/workspace-ledger',
       '@local/approval-alert',
     ];
@@ -32,21 +41,27 @@ window.__ModuleLoader__.load({
       en: {
         'tab.label': 'Self-check',
         'panel.title': 'Upgrade self-check',
-        'panel.body': 'Every @local plugin probes the shipped anchors it builds on once after start. '
-          + 'This page shows the last result; a miss names the anchor that moved and what stopped working.',
+        'panel.body': 'Every @local client plugin probes the shipped anchors it builds on once after start; '
+          + 'host-only plugins report through their JSON. A miss names the anchor that moved and what stopped working.',
         'panel.refresh': 'Refresh',
+        'panel.recheck': 'Re-check',
         'panel.empty': 'No result yet — reload the page once so the plugins run their probe.',
         'panel.ok': 'OK',
         'panel.bad': 'Changed',
         'panel.misses': 'Affected:',
         'panel.unchecked': 'Not on screen this time (not a failure):',
         'panel.checkedAt': 'checked',
-        'panel.host': 'Host-only plugins (workspace-ledger, approval-alert) write their result to '
-          + '~/.dsh/storages/self-check/*.json.',
+        'panel.clientTitle': 'Client plugins',
+        'panel.hostTitle': 'Host-only plugins',
+        'panel.hostMissing': 'No result',
+        'panel.hostUnavailable': 'Host results are unavailable — reinstall the host half once.',
+        'panel.host': 'Host-only results are read from ~/.dsh/storages/self-check/*.json '
+          + 'through the host route api/self-check.host.',
         'watch.title': 'Runtime',
         'watch.version': 'DSH version',
         'watch.seen': 'Last start',
         'watch.plugins': 'Client plugins loaded',
+        'watch.host': 'Host-only results',
         'watch.missing': 'Not loaded',
         'watch.never': 'not recorded yet',
         'alert.upgraded': 'DSH upgraded: {from} → {to}',
@@ -57,20 +72,27 @@ window.__ModuleLoader__.load({
       zh: {
         'tab.label': '自检',
         'panel.title': '升级自检',
-        'panel.body': '每个 @local 插件启动后探一次它依赖的官方锚点。这里显示最近一次结果；'
-          + '异常会列出改动的锚点和受影响的功能。',
+        'panel.body': '每个 @local 客户端插件启动后探一次它依赖的官方锚点；纯宿主插件的结果从 JSON 读。'
+          + '这里显示最近一次结果；异常会列出改动的锚点和受影响的功能。',
         'panel.refresh': '刷新',
+        'panel.recheck': '重新检查',
         'panel.empty': '还没有结果——刷新一次页面让插件跑完探针。',
         'panel.ok': '正常',
         'panel.bad': '有变化',
         'panel.misses': '受影响：',
         'panel.unchecked': '这次界面上没有出现，未检查（不算失效）：',
         'panel.checkedAt': '检查于',
-        'panel.host': '纯宿主插件（workspace-ledger、approval-alert）的结果写在 ~/.dsh/storages/self-check/*.json。',
+        'panel.clientTitle': '客户端插件',
+        'panel.hostTitle': '纯宿主插件',
+        'panel.hostMissing': '还没有结果',
+        'panel.hostUnavailable': '宿主结果读不到——重装一次宿主半。',
+        'panel.host': '纯宿主插件的结果由宿主路由 api/self-check.host 从 '
+          + '~/.dsh/storages/self-check/*.json 读出。',
         'watch.title': '运行状态',
         'watch.version': 'DSH 版本',
         'watch.seen': '上次启动',
         'watch.plugins': '已加载的客户端插件',
+        'watch.host': '纯宿主插件结果',
         'watch.missing': '没加载',
         'watch.never': '还没记录',
         'alert.upgraded': 'DSH 已升级：{from} → {to}',
@@ -95,8 +117,12 @@ window.__ModuleLoader__.load({
 .sm-check-badge[data-ok=true]{color:var(--dsw-alias-state-business-primary);background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 14%,transparent)}
 .sm-check-badge[data-ok=false]{color:var(--dsw-alias-state-error-primary,#e5484d);background:color-mix(in srgb,var(--dsw-alias-state-error-primary,#e5484d) 14%,transparent)}
 .sm-check-time{margin-left:auto;color:var(--dsw-alias-label-tertiary);font-size:11px}
+.sm-check-badge[data-ok=none]{color:var(--dsw-alias-label-tertiary);background:var(--dsw-alias-interactive-bg-hover)}
 .sm-check-miss{color:var(--dsw-alias-label-secondary);font-size:12px}
+.sm-check-hint{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:17px}
 .sm-check-skip{margin-top:2px;color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:17px}
+.sm-check-group{margin-top:12px}
+.sm-check-group>h4{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--dsw-alias-label-secondary)}
 .sm-check-foot{margin-top:14px;color:var(--dsw-alias-label-tertiary);font-size:12px}
 .sm-check-watch{margin:0 0 16px;border:1px solid var(--dsw-alias-border-l4);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
 .sm-check-watch-row{display:flex;align-items:baseline;gap:8px;font-size:12px}
@@ -195,7 +221,7 @@ window.__ModuleLoader__.load({
       const runtime = readRuntime();
       if (runtime.version === null) return { runtime, notice: null };
       const previous = readJson(WATCH_KEY);
-      const missing = EXPECTED.filter((name) => !runtime.local.includes(name));
+      const missing = CLIENT.filter((name) => !runtime.local.includes(name));
       const previousMissing = Array.isArray(previous?.missing) ? previous.missing : [];
       const firstRun = typeof previous?.version !== 'string';
 
@@ -277,13 +303,98 @@ window.__ModuleLoader__.load({
       return () => el.remove();
     }
 
+    const HOST_ROUTE = 'api/self-check.host';
+
+    /** 宿主半结果 → 面板行；文件缺失时保留一行「还没有结果」。 */
+    function hostRows(host) {
+      return HOST.map((name) => {
+        const value = host?.files?.[name];
+        if (value === undefined || value === null) {
+          return { name, ok: null, misses: [], unchecked: [], at: 0, host: true };
+        }
+        return {
+          name,
+          ok: value.ok === true,
+          misses: Array.isArray(value.misses) ? value.misses : [],
+          unchecked: [],
+          at: typeof value.at === 'number' ? value.at : 0,
+          host: true,
+        };
+      });
+    }
+
+    function ResultRow(props) {
+      const { row, t } = props;
+      return h('div', { className: 'sm-check-row' },
+        h('div', { className: 'sm-check-head' },
+          h('span', { className: 'sm-check-name' }, row.name),
+          h('span', {
+            className: 'sm-check-badge',
+            'data-ok': row.ok === true ? 'true' : (row.ok === false ? 'false' : 'none'),
+          }, row.ok === null ? t('panel.hostMissing') : t(row.ok ? 'panel.ok' : 'panel.bad')),
+          row.at > 0 ? h('span', { className: 'sm-check-time' }, timeText(row.at, t)) : null,
+        ),
+        row.ok === false ? h(React.Fragment, null,
+          h('div', { className: 'sm-check-miss' }, t('panel.misses')),
+          row.misses.map((miss, index) => h('div', {
+            key: index,
+            className: 'sm-check-miss',
+          },
+          '· ' + String(miss?.anchor ?? '') + ' → ' + String(miss?.impact ?? ''),
+          typeof miss?.hint === 'string' && miss.hint !== ''
+            ? h('div', { className: 'sm-check-hint' }, '· ' + miss.hint)
+            : null)),
+        ) : null,
+        row.unchecked.length === 0 ? null : h('div', { className: 'sm-check-skip' },
+          h('div', null, t('panel.unchecked')),
+          row.unchecked.map((item, index) => h('div', {
+            key: index,
+          }, '· ' + String(item?.anchor ?? ''))),
+        ),
+      );
+    }
+
     /** Settings → Plugins → Self-check. */
     function SelfCheckTab(props) {
       const t = pickT(props.t);
       const [rows, setRows] = React.useState(() => readResults());
+      const [host, setHost] = React.useState(null);
       const [watch, setWatch] = React.useState(() => readJson(WATCH_KEY));
       const runtime = readRuntime();
-      const missing = EXPECTED.filter((name) => !runtime.local.includes(name));
+      const missing = CLIENT.filter((name) => !runtime.local.includes(name));
+      const loaded = CLIENT.filter((name) => runtime.local.includes(name)).length;
+      const hostLoaded = host === null ? 0 : HOST.filter((name) => host.files?.[name] !== undefined).length;
+
+      const loadHost = () => {
+        if (typeof fetch !== 'function') return;
+        void fetch(HOST_ROUTE, { cache: 'no-store' })
+          .then((response) => (response.ok ? response.json() : null))
+          .then((value) => {
+            if (value !== null && typeof value === 'object' && value.files !== undefined) setHost(value);
+          })
+          .catch(() => {});
+      };
+
+      React.useEffect(() => { loadHost(); }, []);
+
+      const refresh = () => {
+        setRows(readResults());
+        setWatch(readJson(WATCH_KEY));
+        loadHost();
+      };
+
+      // 让各客户端插件重跑一次探针。内容类锚点（工具行/命令块/交付文件）
+      // 只有在当前会话真的出现时才能检查，所以「刷新」之外还要一个主动重检。
+      const recheck = () => {
+        try {
+          if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+            window.dispatchEvent(new CustomEvent('dsh-self-check:run'));
+          }
+        } catch {
+          /* 老浏览器没有 CustomEvent：退化为只刷新列表 */
+        }
+        setTimeout(refresh, 450);
+      };
 
       return h('div', { className: 'sm-check' },
         h('h3', null, t('panel.title')),
@@ -303,7 +414,12 @@ window.__ModuleLoader__.load({
           h('div', { className: 'sm-check-watch-row' },
             h('span', { className: 'sm-check-watch-key' }, t('watch.plugins')),
             h('span', { className: 'sm-check-watch-val', 'data-bad': missing.length > 0 ? 'true' : 'false' },
-              `${runtime.local.length} / ${EXPECTED.length}`),
+              `${loaded} / ${CLIENT.length}`),
+          ),
+          h('div', { className: 'sm-check-watch-row' },
+            h('span', { className: 'sm-check-watch-key' }, t('watch.host')),
+            h('span', { className: 'sm-check-watch-val', 'data-bad': hostLoaded < HOST.length ? 'true' : 'false' },
+              `${hostLoaded} / ${HOST.length}`),
           ),
           missing.length > 0
             ? h('div', { className: 'sm-check-watch-row' },
@@ -318,38 +434,28 @@ window.__ModuleLoader__.load({
           h('button', {
             type: 'button',
             className: 'sm-check-refresh',
-            onClick: () => {
-              setRows(readResults());
-              setWatch(readJson(WATCH_KEY));
-            },
+            onClick: refresh,
           }, t('panel.refresh')),
+          h('button', {
+            type: 'button',
+            className: 'sm-check-refresh',
+            onClick: recheck,
+          }, t('panel.recheck')),
         ),
 
-        rows.length === 0 ? h('p', null, t('panel.empty')) : null,
-        h('div', { className: 'sm-check-list' },
-          rows.map((row) => h('div', { key: row.name, className: 'sm-check-row' },
-            h('div', { className: 'sm-check-head' },
-              h('span', { className: 'sm-check-name' }, row.name),
-              h('span', {
-                className: 'sm-check-badge',
-                'data-ok': row.ok ? 'true' : 'false',
-              }, t(row.ok ? 'panel.ok' : 'panel.bad')),
-              h('span', { className: 'sm-check-time' }, timeText(row.at, t)),
-            ),
-            row.ok ? null : h(React.Fragment, null,
-              h('div', { className: 'sm-check-miss' }, t('panel.misses')),
-              row.misses.map((miss, index) => h('div', {
-                key: index,
-                className: 'sm-check-miss',
-              }, '· ' + String(miss?.anchor ?? '') + ' → ' + String(miss?.impact ?? ''))),
-            ),
-            row.unchecked.length === 0 ? null : h('div', { className: 'sm-check-skip' },
-              h('div', null, t('panel.unchecked')),
-              row.unchecked.map((item, index) => h('div', {
-                key: index,
-              }, '· ' + String(item?.anchor ?? ''))),
-            ),
-          )),
+        h('div', { className: 'sm-check-group' },
+          h('h4', null, t('panel.clientTitle')),
+          rows.length === 0
+            ? h('p', null, t('panel.empty'))
+            : h('div', { className: 'sm-check-list' },
+              rows.map((row) => h(ResultRow, { key: row.name, row, t }))),
+        ),
+        h('div', { className: 'sm-check-group' },
+          h('h4', null, t('panel.hostTitle')),
+          host === null
+            ? h('p', { className: 'sm-check-skip' }, t('panel.hostUnavailable'))
+            : h('div', { className: 'sm-check-list' },
+              hostRows(host).map((row) => h(ResultRow, { key: row.name, row, t }))),
         ),
         h('div', { className: 'sm-check-foot' }, t('panel.host')),
       );

@@ -67,20 +67,20 @@ body{
   --sm-frame-shadow:0 0 14px rgba(0,0,0,.10);
   --sm-frame-lift:inset 0 1px 0 rgba(255,255,255,.22);
   /* 透明白，不跟主色走：浅色/深色主题下都是同一层提亮，主色改成什么都不会串色。 */
-  --sm-open-fill:rgba(255,255,255,.85);
-  --sm-run-fill:rgba(255,255,255,.45);
+  --sm-open-fill:#fff;
+  --sm-run-fill:rgba(255,255,255,.5);
 }
-[data-row-key][data-row-key][data-sm-running]:not([aria-selected=true]){background:var(--sm-run-fill,rgba(255,255,255,.3))}
+[data-row-key][data-row-key][data-sm-running]:not([aria-selected=true]){background:var(--sm-run-fill,rgba(255,255,255,.5))}
 /* 跑完还没看（官方 completionUnread → 状态点 data-state=done）的会话行同色同浓度。
    注意 StateDot 只有 ongoing 是 svg，done/idle/warning 都是 span，所以这里不能写 svg[...]。 */
-[data-row-key^=session][data-row-key][data-row-key]:not([aria-selected=true]):has([data-state=done]){background:var(--sm-run-fill,rgba(255,255,255,.3))}
+[data-row-key^=session][data-row-key][data-row-key]:not([aria-selected=true]):has([data-state=done]){background:var(--sm-run-fill,rgba(255,255,255,.5))}
 /* 运行行只加粗，不改颜色：主色调成白色时标题会变白、在浅底上看不清。 */
 [data-row-key][data-sm-running] [data-sm-title]{font-weight:600}
 [data-row-key][data-sm-mark] [data-sm-title]{text-decoration:underline;text-decoration-color:#000;text-decoration-thickness:2px;text-underline-offset:3px}
 /* 选中行只改底色：标题颜色、字重、转圈、运行数字都保持平时那样（用户明确要求“字体颜色不要变”）。 */
 /* 选中行永远赢：三重属性抬 specificity，且排在所有运行/完成规则之后；
    “正在运行 + 被选中”必须显示选中的浓度。 */
-[data-row-key][data-row-key][data-row-key][aria-selected=true]{background:var(--sm-open-fill,rgba(255,255,255,.85))!important}
+[data-row-key][data-row-key][data-row-key][aria-selected=true]{background:var(--sm-open-fill,#fff)!important}
 [data-row-key^=session] svg[data-state=ongoing]{color:var(--dsw-alias-label-primary);transform:scale(1.25)}
 .sm-run{display:inline-flex;align-items:center;gap:2px;height:20px;flex:none;color:var(--dsw-alias-label-primary)}
 /* 工作区行的文件夹图标（含当前工作区那份 folderActive）也用文字色，别跟主色跑。 */
@@ -596,23 +596,43 @@ body{
 
     /**
      * One-shot self-check: probes the shipped anchors this plugin builds on so
-     * a Harness upgrade reports what moved instead of failing silently. Runs
-     * once after the first paint (one bounded retry while the shell mounts),
-     * then never again — no timer, no observer, no recurring cost.
+     * a Harness upgrade reports what moved instead of failing silently.
+     *
+     * Sidebar rows render asynchronously (sessions/workspaces arrive after the
+     * first paint), so a first-frame `null` is "not mounted yet", not a broken
+     * anchor. Wait for the first treeitem (bounded) before judging; rows that
+     * exist without `data-row-key` are the real regression, and a sidebar with
+     * no rows at all is reported as unchecked rather than as a failure.
+     * Stops at the first result (or ~10s); the only other entry point is the
+     * manual re-check event from the self-check panel.
      */
-    function selfCheck(label, checks) {
+    function selfCheck(ctx, label, checks) {
+      if (typeof document === 'undefined') return;
       let runs = 0;
+      let timer = 0;
       const run = () => {
         runs += 1;
+        const hasRows = document.querySelector('[role="treeitem"]') !== null;
+        const hasContent = document.querySelector(
+          '[data-row-key^="session:"], [data-row-key^="workspace:"], [data-row-key^="overflow:"]',
+        ) !== null;
+        const emptyState = document.querySelector('[data-row-key="empty"]') !== null;
+        if (!hasRows && !hasContent && !emptyState && runs < 20) {
+          timer = setTimeout(run, 500); // rows not mounted yet is not a broken anchor
+          return;
+        }
+        const noContent = !hasRows && !hasContent;
         const misses = [];
+        const unchecked = [];
         for (const check of checks) {
           let ok = false;
           try { ok = check.probe() === true; } catch { ok = false; }
-          if (!ok) misses.push(check);
-        }
-        if (runs === 1 && misses.length === checks.length) {
-          setTimeout(run, 1500); // shell not mounted yet is not a broken anchor
-          return;
+          if (ok) continue;
+          if (check.optional === true || noContent) {
+            unchecked.push({ anchor: check.anchor, impact: check.impact });
+            continue;
+          }
+          misses.push(check);
         }
         // Keep the last result where a human can read it without DevTools:
         // localStorage['dsh.self-check'] holds one entry per plugin.
@@ -622,6 +642,7 @@ body{
           all[label] = {
             ok: misses.length === 0,
             misses: misses.map((m) => ({ anchor: m.anchor, impact: m.impact })),
+            unchecked,
             at: Date.now(),
           };
           localStorage.setItem(key, JSON.stringify(all));
@@ -633,8 +654,22 @@ body{
         for (const miss of misses) console.warn('  · ' + miss.anchor + ' → ' + miss.impact);
         console.warn('[' + label + '] 修复参照 经验文档/插件开发.md「升级后失效排查」。');
       };
-      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
-      else setTimeout(run, 16);
+      const schedule = () => {
+        if (timer !== 0) { clearTimeout(timer); timer = 0; }
+        runs = 0;
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+        else timer = setTimeout(run, 16);
+      };
+      schedule();
+      ctx.effect(() => {
+        if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return;
+        const rerun = () => schedule();
+        window.addEventListener('dsh-self-check:run', rerun);
+        return () => {
+          window.removeEventListener('dsh-self-check:run', rerun);
+          if (timer !== 0) { clearTimeout(timer); timer = 0; }
+        };
+      });
     }
 
     return {
@@ -771,7 +806,7 @@ body{
           locale: NS,
         }, MarkOverlay)));
 
-        selfCheck(NS, [
+        selfCheck(ctx, NS, [
           {
             anchor: '侧栏行 data-row-key（会话/工作区）',
             impact: '标注、卡片框、运行中转圈全部失效',

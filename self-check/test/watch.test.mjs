@@ -11,10 +11,14 @@ const SRC = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'clien
 
 // 插件名单从源码里读，不在这里再维护一份 —— 否则加插件时两处都要改，忘一处就红。
 const SOURCE = fs.readFileSync(SRC, 'utf8');
-const EXPECTED_BLOCK = SOURCE.match(/const EXPECTED = \[([\s\S]*?)\];/);
-if (EXPECTED_BLOCK === null) throw new Error('没找到 EXPECTED 名单');
-const ALL = [...EXPECTED_BLOCK[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
-if (ALL.length === 0) throw new Error('EXPECTED 名单是空的');
+const CLIENT_BLOCK = SOURCE.match(/const CLIENT = \[([\s\S]*?)\];/);
+const HOST_BLOCK = SOURCE.match(/const HOST = \[([\s\S]*?)\];/);
+if (CLIENT_BLOCK === null || HOST_BLOCK === null) throw new Error('没找到 CLIENT/HOST 名单');
+const ALL = [...CLIENT_BLOCK[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+const HOSTS = [...HOST_BLOCK[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+if (ALL.length === 0) throw new Error('CLIENT 名单是空的');
+if (HOSTS.length === 0) throw new Error('HOST 名单是空的');
+if (HOSTS.some((name) => ALL.includes(name))) throw new Error('HOST 不能出现在 CLIENT 里');
 
 /** 造一套最小浏览器环境；ids 就是宿主会注入的 __DSH_BOOT__.entries。 */
 function makeEnv({ version, ids, storage }) {
@@ -135,6 +139,27 @@ const seeded = (overrides = {}) => JSON.stringify({
     storage: { 'dsh.self-check.watch': seeded() } });
   activate(env);
   check('无变化不弹', alertCount(env) === 0);
+}
+
+// 2b. 纯宿主插件不在客户端名单里：不弹「没加载」
+{
+  const env = makeEnv({ version: '0.2.1-rc.3', ids: ALL,
+    storage: { 'dsh.self-check.watch': seeded({ missing: HOSTS }) } });
+  activate(env);
+  check('纯宿主插件不算客户端没加载', alertCount(env) === 0, 'got ' + alertCount(env));
+  const watch = watchOf(env);
+  check('基线里不再保留纯宿主缺项',
+    Array.isArray(watch?.missing) && watch.missing.length === 0, JSON.stringify(watch));
+}
+
+// 2c. 旧基线里带着纯宿主缺项，但真缺一个客户端插件：仍然要点名
+{
+  const fewer = ALL.filter((name) => name !== '@local/sidebar-marks');
+  const env = makeEnv({ version: '0.2.1-rc.3', ids: fewer,
+    storage: { 'dsh.self-check.watch': seeded({ missing: HOSTS }) } });
+  activate(env);
+  check('真缺客户端插件仍会弹', alertCount(env) === 1, 'got ' + alertCount(env));
+  check('提示只点名真缺的客户端插件', /sidebar-marks/.test(alertText(env)), alertText(env).slice(0, 200));
 }
 
 // 3. 升级了：弹一条，带版本号

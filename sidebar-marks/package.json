@@ -1,6 +1,6 @@
 {
   "name": "@local/sidebar-marks",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Sidebar marks: toggle a black underline on conversations and workspaces from the \"…\" menus, and give the open conversation and running rows a stronger look.",

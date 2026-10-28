@@ -1,9 +1,9 @@
 {
   "name": "@local/self-check",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Self-check page plus a startup roster check: one settings tab lists every @local plugin's last upgrade self-check, and a corner notice appears after a DSH upgrade or when a plugin did not load.",
+  "description": "Self-check page plus a startup roster check: one settings tab lists every @local plugin's last upgrade self-check (client probes plus host-only JSON), and a corner notice appears after a DSH upgrade or when a client plugin did not load.",
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
@@ -30,6 +30,6 @@
     }
   },
   "scripts": {
-    "test": "node test/watch.test.mjs"
+    "test": "node test/watch.test.mjs && node test/host.test.mjs"
   }
 }

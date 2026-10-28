@@ -680,10 +680,11 @@ window.__ModuleLoader__.load({
      * One-shot self-check: probes the shipped anchors this plugin builds on so
      * a Harness upgrade reports what moved instead of failing silently. Runs
      * once after the first paint (one bounded retry while the shell mounts),
-     * then never again — no timer, no observer, no recurring cost.
+     * and again only on the panel's manual `dsh-self-check:run`; no recurring timer.
      */
-    function selfCheck(label, checks) {
+    function selfCheck(ctx, label, checks) {
       let runs = 0;
+      let timer = 0;
       const run = () => {
         runs += 1;
         const misses = [];
@@ -701,7 +702,7 @@ window.__ModuleLoader__.load({
           misses.push(check);
         }
         if (runs === 1 && misses.length === checks.length) {
-          setTimeout(run, 1500); // shell not mounted yet is not a broken anchor
+          timer = setTimeout(run, 1500); // shell not mounted yet is not a broken anchor
           return;
         }
         // Keep the last result where a human can read it without DevTools:
@@ -724,8 +725,22 @@ window.__ModuleLoader__.load({
         for (const miss of misses) console.warn('  · ' + miss.anchor + ' → ' + miss.impact);
         console.warn('[' + label + '] 修复参照 经验文档/插件开发.md「升级后失效排查」。');
       };
-      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
-      else setTimeout(run, 16);
+      const schedule = () => {
+        if (timer !== 0) { clearTimeout(timer); timer = 0; }
+        runs = 0;
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+        else timer = setTimeout(run, 16);
+      };
+      schedule();
+      ctx.effect(() => {
+        if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return;
+        const rerun = () => schedule();
+        window.addEventListener('dsh-self-check:run', rerun);
+        return () => {
+          window.removeEventListener('dsh-self-check:run', rerun);
+          if (timer !== 0) { clearTimeout(timer); timer = 0; }
+        };
+      });
     }
 
     // ── 配色：只换品牌色阶，其余九档按官方明暗关系派生 ───────────────────
@@ -929,7 +944,7 @@ html[data-ys-sidebar-shadow] [class*="sidebarCol"]{box-shadow:var(--ys-sidebar-s
    统一改成黑字；shiki 的行内 color 不带 !important，语法高亮照样保留。 */
 html [class*="_bubble"] *{color:#000}
 html [class*="_bubble"]{
-  background-color:rgba(255,255,255,.85);
+  background-color:#fff;
   box-shadow:
     var(--sm-frame-lift,inset 0 1px 0 rgba(255,255,255,.22)),
     var(--sm-frame-shadow,0 0 14px rgba(0,0,0,.10)),
@@ -979,8 +994,9 @@ html [class*="_markdown"] :not(pre)>code{background-color:${GLASS30}}
    那两个插件只留结构与交互，颜色一律由这里给；html body 提一级，
    保证压过它们自己写在 body{} 里的同名变量。 */
 html body{
-  --sm-open-fill:rgba(255,255,255,.8);
-  --sm-run-fill:rgba(255,255,255,.45);
+  /* 选中行不透明（白底黑字，深色主题下也最跳）；运行/完成未读 60%。 */
+  --sm-open-fill:#fff;
+  --sm-run-fill:rgba(255,255,255,.5);
   --sm-frame:color-mix(in srgb,var(--dsw-alias-label-primary) 22%,transparent);
   --sm-frame-fill:color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent);
   --sm-frame-shadow:0 0 14px rgba(0,0,0,.10);
@@ -1876,7 +1892,7 @@ html[data-ys-overlay-unified] [class*="_card_"][class][class] *{color:inherit}
           },
         });
 
-        selfCheck('ygelon', [
+        selfCheck(ctx, 'ygelon', [
           {
             anchor: '页面标题 head > title',
             impact: '浏览器标题不显示品牌名',

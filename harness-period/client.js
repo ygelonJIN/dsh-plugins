@@ -239,20 +239,28 @@ window.__ModuleLoader__.load({
      * One-shot self-check: probes the shipped anchors this plugin builds on so
      * a Harness upgrade reports what moved instead of failing silently. Runs
      * once after the first paint (one bounded retry while the shell mounts),
-     * then never again — no timer, no observer, no recurring cost.
+     * and again only on the panel's manual `dsh-self-check:run`; no recurring timer.
      */
-    function selfCheck(label, checks) {
+    function selfCheck(ctx, label, checks) {
       let runs = 0;
+      let timer = 0;
       const run = () => {
         runs += 1;
         const misses = [];
+        const unchecked = [];
         for (const check of checks) {
           let ok = false;
           try { ok = check.probe() === true; } catch { ok = false; }
-          if (!ok) misses.push(check);
+          if (ok) continue;
+          // optional = 随内容出现的块；启动时没渲染不算锚点变了。
+          if (check.optional === true) {
+            unchecked.push({ anchor: check.anchor, impact: check.impact });
+            continue;
+          }
+          misses.push(check);
         }
         if (runs === 1 && misses.length === checks.length) {
-          setTimeout(run, 1500); // shell not mounted yet is not a broken anchor
+          timer = setTimeout(run, 1500); // shell not mounted yet is not a broken anchor
           return;
         }
         // Keep the last result where a human can read it without DevTools:
@@ -263,6 +271,7 @@ window.__ModuleLoader__.load({
           all[label] = {
             ok: misses.length === 0,
             misses: misses.map((m) => ({ anchor: m.anchor, impact: m.impact })),
+            unchecked,
             at: Date.now(),
           };
           localStorage.setItem(key, JSON.stringify(all));
@@ -274,8 +283,22 @@ window.__ModuleLoader__.load({
         for (const miss of misses) console.warn('  · ' + miss.anchor + ' → ' + miss.impact);
         console.warn('[' + label + '] 修复参照 经验文档/插件开发.md「升级后失效排查」。');
       };
-      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
-      else setTimeout(run, 16);
+      const schedule = () => {
+        if (timer !== 0) { clearTimeout(timer); timer = 0; }
+        runs = 0;
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+        else timer = setTimeout(run, 16);
+      };
+      schedule();
+      ctx.effect(() => {
+        if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return;
+        const rerun = () => schedule();
+        window.addEventListener('dsh-self-check:run', rerun);
+        return () => {
+          window.removeEventListener('dsh-self-check:run', rerun);
+          if (timer !== 0) { clearTimeout(timer); timer = 0; }
+        };
+      });
     }
 
     return {
@@ -342,7 +365,7 @@ window.__ModuleLoader__.load({
           clock,
         }))));
 
-        selfCheck(NS, [{
+        selfCheck(ctx, NS, [{
           anchor: '输入框 contenteditable',
           impact: '峰谷提示不显示',
           probe: () => document.querySelector('[contenteditable="true"]') !== null,

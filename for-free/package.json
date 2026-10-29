@@ -1,0 +1,48 @@
+{
+  "name": "@local/for-free",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "免 Key 免费模型接入：opencode 免费车道 + Kilo 免费池，一页设置面板。从 dsh-our-free-model 2.7.2（MIT）精简衍生，删掉账号渠道、EAC、Key 聚合、本地网关、自升级与 11 页界面。",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "src",
+    "locale/*.json",
+    "icon.svg",
+    "LICENSE"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "free-model",
+    "llm-provider"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings-plugins"
+      ]
+    }
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "node test/smoke.mjs && node test/relay.mjs",
+    "test:live": "node test/live.mjs",
+    "upstream:diff": "node scripts/upstream-diff.mjs",
+    "upstream:sync": "node scripts/upstream-sync.mjs"
+  }
+}

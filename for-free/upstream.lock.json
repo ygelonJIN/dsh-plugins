@@ -1,0 +1,119 @@
+{
+  "upstream": {
+    "name": "dsh-our-free-model",
+    "version": "2.7.2",
+    "lockedAt": "2026-10-28",
+    "note": "由 scripts/upstream-sync.mjs 生成；不要手改，重跑同步即可"
+  },
+  "files": {
+    "src/adapter.js": {
+      "upstreamSha": "31339bd4d0e52e3b",
+      "localSha": "e2130bca82f9b602"
+    },
+    "src/catalog.js": {
+      "upstreamSha": "73a17a114fa1f9ff",
+      "localSha": "73a17a114fa1f9ff"
+    },
+    "src/channel.js": {
+      "upstreamSha": "c1b80fdaac75fa32",
+      "localSha": "c1b80fdaac75fa32"
+    },
+    "src/combos.js": {
+      "upstreamSha": "5b4439b033c60115",
+      "localSha": "5b4439b033c60115"
+    },
+    "src/core/completion.js": {
+      "upstreamSha": "526798c82dbcc974",
+      "localSha": "a92f02209274c98d"
+    },
+    "src/core/runtime.js": {
+      "upstreamSha": "39c682c47620ec2d",
+      "localSha": "8d8c4d81bd98abd6"
+    },
+    "src/core/stats.js": {
+      "upstreamSha": "3da2a3ee3de0f42e",
+      "localSha": "3da2a3ee3de0f42e"
+    },
+    "src/effort.js": {
+      "upstreamSha": "3a2adb0f6fab1ba0",
+      "localSha": "3a2adb0f6fab1ba0"
+    },
+    "src/failure.js": {
+      "upstreamSha": "859b5b8ccc7ab11e",
+      "localSha": "859b5b8ccc7ab11e"
+    },
+    "src/http.js": {
+      "upstreamSha": "982a5bef246bdff7",
+      "localSha": "36aa994e5bb06df4"
+    },
+    "src/image-pricing.js": {
+      "upstreamSha": "ee92a354506df0f0",
+      "localSha": "ee92a354506df0f0"
+    },
+    "src/kilo.js": {
+      "upstreamSha": "8ece253a9ae29597",
+      "localSha": "57bd7042ac030132"
+    },
+    "src/messages.js": {
+      "upstreamSha": "217fd90273824f13",
+      "localSha": "217fd90273824f13"
+    },
+    "src/model-test.js": {
+      "upstreamSha": "56ce1a9d5cf82523",
+      "localSha": "8c4f8b83473cf160"
+    },
+    "src/probe.js": {
+      "upstreamSha": "6c813cee69ae59ac",
+      "localSha": "cfaceb511617c3ce"
+    },
+    "src/recovery.js": {
+      "upstreamSha": "8284e09f3bd75ade",
+      "localSha": "8284e09f3bd75ade"
+    },
+    "src/route/classify.js": {
+      "upstreamSha": "9123be50f8284a9a",
+      "localSha": "9123be50f8284a9a"
+    },
+    "src/store.js": {
+      "upstreamSha": "a9c9e6bacae9d1d7",
+      "localSha": "81f250c7d4913f11"
+    },
+    "src/stream.js": {
+      "upstreamSha": "4b79472861236d53",
+      "localSha": "109c227a5b212ae3"
+    },
+    "src/upstream.js": {
+      "upstreamSha": "4bf9db2c87a49e6e",
+      "localSha": "ee39321a0350caf5"
+    }
+  },
+  "fingerprints": {
+    "clientUa": "opencode/latest/2.0.26/cli",
+    "fingerprintTools": "'read', 'shell'",
+    "toolDefinitionsHash": "cee0f4db6a5ac5c7",
+    "sessionRe": "/^ses_[0-9a-f]{12}[0-9A-Za-z]{14}$/",
+    "sessionDescendingRe": "/^[0-9a-f]{9}f[c-f][0-9a-f]$/",
+    "responsesModels": "'muse-spark-1.2-contributor-free', 'muse-spark-1.3-contributor-free'",
+    "messagesModels": "'union-alpha'",
+    "endpoints": [
+      "'/inference/v1/chat/completions'",
+      "'/inference/v1/messages'",
+      "'/inference/v1/responses'"
+    ],
+    "gatewayHeaders": [
+      "accept",
+      "authorization",
+      "content-type",
+      "user-agent",
+      "x-opencode-client",
+      "x-opencode-project",
+      "x-opencode-session",
+      "x-opencode-session-id",
+      "x-session-affinity",
+      "x-session-id"
+    ],
+    "upstreamBase": "process.env.OUR_FREE_MODEL_BASE ?? 'https://opencode.ai'",
+    "kiloBase": "(process.env.OUR_FREE_MODEL_KILO_BASE ?? 'https://api.kilo.ai/api/gateway').replace(/\\/+$/, '')",
+    "apiVersion": "2023-06-01"
+  }
+}

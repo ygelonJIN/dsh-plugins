@@ -24,6 +24,7 @@ window.__ModuleLoader__.load({
       '@local/sidebar-marks',
       '@local/self-check',
       '@local/prompt-inject',
+      '@local/for-free',
     ];
 
     /**

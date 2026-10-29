@@ -1,0 +1,4 @@
+name: prompt-inject
+version: 0.1.0
+description: 系统提示附加器：把 prompt.md 注入系统提示段（section）或当轮用户消息（turn），带开关、斜杠命令与 CLI
+author: ygelon

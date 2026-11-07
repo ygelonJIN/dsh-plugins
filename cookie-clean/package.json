@@ -1,0 +1,35 @@
+{
+  "name": "@local/cookie-clean",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Settings → Plugins tab that cleans the Electron shell's stale loopback authentication cookies. Each launch mints one dsh-auth-<hash(host:port)> cookie for a random port and nothing removes the old ones, so the Cookie header grows until it crosses Node's 16 KiB limit and the Host answers 431 (the shell reports it as \"Web authentication failed\"). The host half deletes only rows whose port no longer exists, so the running session keeps its own cookie.",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings-plugins"
+      ]
+    }
+  },
+  "scripts": {
+    "test": "node test/smoke.mjs"
+  }
+}

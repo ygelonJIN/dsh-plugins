@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Cookie cleanup",
+    "description": "A Settings → Plugins tab that shows how many loopback auth cookies have piled up and how close the request header is to the 16 KiB limit, with one button to delete the entries whose port no longer exists. The live cookie is recomputed from the current port and excluded."
+  }
+}

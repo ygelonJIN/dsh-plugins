@@ -1,0 +1,12 @@
+# Cookie 清理：设置 → 插件里的「Cookie 清理」页签。
+#
+# 桌面客户端每次启动都用随机端口（`--port 0`）起 Host，并按端口名生成一条
+# `dsh-auth-<hash(host:port)>` cookie；端口一直变，旧条目又不删，只按 30 天到期。
+# Chromium 把 127.0.0.1 的 cookie 全塞进同一个请求头，攒到约 70 条就超过 Node
+# 的 16 KiB 上限，Host 回 431，外壳报「Web authentication failed」。
+#
+# 宿主半只删端口已经不存在的条目，当前这条按端口重算名字后排除，所以清理
+# 不会把正在用的会话踢下线。
+- insert:
+    - id: cookie-clean
+      name: '@local/cookie-clean'

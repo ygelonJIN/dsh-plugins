@@ -158,8 +158,10 @@ window.__ModuleLoader__.load({
       const zoned = zonedParts(date, config.timezone);
       const coveredYears = new Set();
       for (const key of config.holidays) coveredYears.add(Number(key.slice(0, 4)));
+      // 只要求当年，不提前到 11 月就把明年算成缺配置：
+      // 否则整个 11–12 月都在喊「节假日未配置」，而这时的提示位本该显示周末/时段。
+      // 代价是跨年那几天（次年元旦）要人工先补，没补就按工作日判高低价。
       const requiredYears = [zoned.year];
-      if (zoned.month >= 11) requiredYears.push(zoned.year + 1);
       const missingYears = requiredYears.filter((year) => !coveredYears.has(year));
       return {
         period: classify(zoned, config),

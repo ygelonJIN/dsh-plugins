@@ -222,6 +222,10 @@ def last_render() -> Dict[str, Any]:
 
 SOUL_START = "<!-- prompt-inject:soul:start -->"
 SOUL_END = "<!-- prompt-inject:soul:end -->"
+# 替换模式的「保留原文」变体：正文写在前面，原文（身份锚点）以 persona 块附在末尾。
+# 解决整份替换把「我是谁 / 对面是谁」一起抹掉、模型自己重新分配角色的老问题。
+SOUL_KEEP_START = "<!-- prompt-inject:persona:start -->"
+SOUL_KEEP_END = "<!-- prompt-inject:persona:end -->"
 
 
 def soul_path() -> Path:
@@ -298,8 +302,38 @@ def soul_on() -> str:
     return body
 
 
+def _strip_persona_block(text: str) -> str:
+    start = text.find(SOUL_KEEP_START)
+    if start < 0:
+        return text
+    end = text.find(SOUL_KEEP_END, start)
+    if end < 0:
+        return text
+    head = text[:start].rstrip("\n")
+    rest = text[end + len(SOUL_KEEP_END):].lstrip("\n")
+    if head and rest:
+        return head + "\n\n" + rest
+    return head or rest
+
+
+def soul_keep_enabled() -> bool:
+    return bool(read_state().get("soul_keep"))
+
+
+def set_soul_keep(flag: bool) -> bool:
+    state = read_state()
+    state.update(soul_keep=bool(flag), at=datetime.now().astimezone().isoformat(timespec="seconds"))
+    _write_json(state_path(), state)
+    return bool(flag)
+
+
 def soul_replace() -> tuple:
-    """整份替换：先把原文备份到 prompt-inject/SOUL.original.md（另存一份带时间戳），再写正文。"""
+    """整份替换：先把原文备份到 prompt-inject/SOUL.original.md（另存一份带时间戳），再写正文。
+
+    ``soul_keep`` 为真时走「保留原文」变体：正文照常写在前面，原文以 persona 块附在末尾，
+    这样注入生效但「我是谁 / 对面是谁」仍然留在提示词里，模型不会自己重新分配角色。
+    ``soul off`` 仍然从备份整份还原，两种变体行为一致。
+    """
     body = strip_wrapping(read_text())
     if not body:
         raise ValueError("正文为空，先把 prompt.md 写出来再替换 SOUL.md")
@@ -308,10 +342,22 @@ def soul_replace() -> tuple:
     except Exception:
         current = ""
     state = read_state()
+    keep = bool(state.get("soul_keep"))
+    persona = ""
+    if keep:
+        # 已经是替换模式时 current 里混着上一版正文，真正的原文在备份里
+        if state.get("soul") == "replace":
+            try:
+                persona = Path(str(state.get("soul_backup") or soul_backup_path())).read_text(encoding="utf-8")
+            except Exception:
+                persona = ""
+        else:
+            persona = current
+        persona = _strip_persona_block(_strip_soul_block(persona)).strip()
     if state.get("soul") != "replace":
         data_dir().mkdir(parents=True, exist_ok=True)
         backup = soul_backup_path()
-        backup.write_text(current, encoding="utf-8")
+        backup.write_text(_strip_persona_block(current), encoding="utf-8")
         # 只在内容变化时留时间戳副本，反复 on/off 不会堆一堆一样的备份
         archive = data_dir() / ("SOUL.original-%s.md" % datetime.now().strftime("%Y%m%d-%H%M%S"))
         if not archive.exists():
@@ -330,8 +376,11 @@ def soul_replace() -> tuple:
     else:
         state["soul_chars"] = len(body)
         _write_json(state_path(), state)
-    _write_soul(body)
-    return body, soul_backup_path(), str(read_state().get("soul_archive") or "")
+    write_body = body
+    if keep and persona:
+        write_body = "%s\n\n%s\n%s\n%s" % (body, SOUL_KEEP_START, persona, SOUL_KEEP_END)
+    _write_soul(write_body)
+    return write_body, soul_backup_path(), str(read_state().get("soul_archive") or "")
 
 
 def soul_off() -> str:
@@ -407,6 +456,7 @@ _USAGE = (
     "/prompt-inject show              看正文（截断显示）\n"
     "/prompt-inject soul on|off|sync 托管块写进 SOUL.md 顶部（块外原文不动）\n"
     "/prompt-inject soul replace      整份替换 SOUL.md（先备份原文，soul off 还原）\n"
+    "/prompt-inject soul keep on|off  替换时把原文身份附在末尾（不再抹掉\"我是谁/对面是谁\"）\n"
     "/prompt-inject source [路径]     看/切换正文来源（可指向共享文件，source default 复位）\n"
     "/prompt-inject path              打印正文/状态/记录三个路径"
 )
@@ -552,14 +602,25 @@ def handle_command(raw: str) -> str:
             if result == "block-removed":
                 return "已从 SOUL.md 删掉托管块，其余内容原样保留。"
             return "SOUL.md 没有被本插件动过，无需关闭。"
+        if sub.startswith("keep"):
+            parts = sub.split(None, 1)
+            value = parts[1] if len(parts) > 1 else "on"
+            flag = value not in ("off", "false", "0", "no", "关")
+            set_soul_keep(flag)
+            return "保留原文身份 = %s。%s" % (
+                "开" if flag else "关",
+                "下次 on / soul replace 时正文在前、原文身份附在末尾（off 照旧整份还原）。"
+                if flag else "下次 on / soul replace 恢复成纯正文替换。",
+            )
         if sub == "status":
             if soul_replaced():
                 state = read_state()
-                return "soul 通道 替换模式 · 正文 %d 字符 · 原文备份 %s · SOUL 上限 %d · %s" % (
+                return "soul 通道 替换模式%s · 正文 %d 字符 · 原文备份 %s · SOUL 上限 %d · %s" % (
+                    "（保留原文身份）" if state.get("soul_keep") else "",
                     state.get("soul_chars", 0), state.get("soul_backup", soul_backup_path()), soul_cap(), soul_path())
             return "soul 通道 %s · 正文 %d 字符 · SOUL 上限 %d · %s" % (
                 "托管块已写入" if soul_present() else "未写入", len(strip_wrapping(read_text())), soul_cap(), soul_path())
-        return "soul 子命令：on / replace / off / sync / status\n%s" % _USAGE
+        return "soul 子命令：on / replace / off / sync / status / keep on|off\n%s" % _USAGE
     if action == "source":
         if not rest.strip():
             return "正文来源 %s\n默认 %s" % (source_path(), text_path())

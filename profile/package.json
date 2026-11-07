@@ -16,20 +16,24 @@
         "@local/self-check",
         "@local/prompt-inject",
         "@local/workspace-ledger",
-        "@local/approval-alert"
+        "@local/approval-alert",
+        "@local/cookie-clean",
+        "@local/ida-mcp-bridge"
       ]
     }
   },
   "dependencies": {
     "@local/approval-alert": "link:{{REPO}}/approval-alert",
+    "@local/cookie-clean": "link:{{REPO}}/cookie-clean",
     "@local/harness-period": "link:{{REPO}}/harness-period",
+    "@local/ida-mcp-bridge": "link:{{REPO}}/ida-mcp-bridge",
+    "@local/prompt-inject": "link:{{REPO}}/prompt-inject",
     "@local/self-check": "link:{{REPO}}/self-check",
     "@local/session-delete": "link:{{REPO}}/session-delete",
     "@local/session-undo": "link:{{REPO}}/session-undo",
     "@local/sidebar-marks": "link:{{REPO}}/sidebar-marks",
     "@local/skin": "link:{{REPO}}/skin",
     "@local/usage-cost": "link:{{REPO}}/usage-cost",
-    "@local/workspace-ledger": "link:{{REPO}}/workspace-ledger",
-    "@local/prompt-inject": "link:{{REPO}}/prompt-inject"
+    "@local/workspace-ledger": "link:{{REPO}}/workspace-ledger"
   }
 }

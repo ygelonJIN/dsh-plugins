@@ -1,0 +1,22 @@
+# ida-mcp-bridge bundle patch。
+#
+# 一条 insert 把外接盘上的 idalib-mcp 挂给官方的 dsh-mcp-client；工具名是
+# mcp__ida__*。服务器本体不在本仓库，见 README。
+#
+# 为什么用 `python -m` 而不是 `.venv/bin/idalib-mcp`：
+# 卷名 `/Volumes/TUF ESD-T1A Media` 带空格，脚本 shebang
+# `#!/Volumes/TUF ESD-T1A Media/.../python` 会被内核按空格截断成
+# `/Volumes/TUF`，直接执行必失败。`python -m` 不经 shebang，地址里的空格
+# 只是 argv 的一部分，安全。
+- insert:
+    - id: mcp-ida
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: ida
+        transport: stdio
+        command: /Volumes/TUF ESD-T1A Media/ida-mcp/.venv/bin/python
+        args: [ '-m', 'ida_pro_mcp.idalib_supervisor', '--stdio', '--unsafe' ]
+        cwd: /Volumes/TUF ESD-T1A Media/ida-mcp
+        env:
+          IDAUSR: /Volumes/TUF ESD-T1A Media/ida-mcp/idausr
+        toolCallTimeoutMs: 300000

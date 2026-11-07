@@ -1,0 +1,26 @@
+{
+  "name": "@local/ida-mcp-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "把外接盘上的 ida-mcp（headless IDA 的 stdio MCP 服务器）挂进 DSH：本包只有一条 bundle patch，服务器本体在 /Volumes/TUF ESD-T1A Media/ida-mcp。",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "mcp"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

@@ -4,8 +4,8 @@
 - id: agent-default-model
   name: "@deepseek-ai/dsh-agent-default-model"
   config:
-    provider: deepseek-account
-    model: deepseek-flash
+    provider: opencode-go
+    model: deepseek-v4.1-flash
     reasoningEffort: high
 - id: ui-settings-account
   name: "@deepseek-ai/dsh-client-ui-settings-account"
@@ -41,6 +41,8 @@
     providers:
       xiaomi:
         apiKeyEnv: XIAOMI_API_KEY
+      opencode-go:
+        apiKeyEnv: OPENCODE_GO_API_KEY
 
 - insert:
     - id: prompt-inject
@@ -49,3 +51,10 @@
         dir: "/Volumes/TUF ESD-T1A Media/dsh-plugins/prompt-inject"
 - id: entry-customization
   disabled: true
+
+# 关闭自动压缩（auto: false）：不再按阈值自动压缩，也不再在上游报上下文溢出时自动恢复；
+# 手动 /compact 仍然可用。想恢复自动压缩：删掉这一项，或把 auto 改成 true。
+- id: compaction-basic
+  name: "@deepseek-ai/dsh-compaction-basic"
+  config:
+    auto: false

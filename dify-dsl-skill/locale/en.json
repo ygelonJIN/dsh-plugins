@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Dify DSL",
+    "description": "Provides the dify-workflow-dsl skill: author, review, and validate import-ready Dify YAML, with node reference, ten 1.16 examples, and a version-aware validator."
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "@local/dify-dsl-skill",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "把 dify-workflow-dsl 技能作为 DSH 技能提供方：写、改、审查、校验可直接导入 Dify 的 App DSL YAML（0.6.0 / 0.7.0）。",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "assets",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "icon": "./icon.svg",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT"
+}

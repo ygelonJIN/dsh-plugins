@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Dify DSL",
+    "description": "提供 dify-workflow-dsl 技能：写、改、审查、校验可直接导入 Dify 的 YAML，含节点字段参考、10 个 1.16 示例和版本感知校验器。"
+  }
+}

@@ -1,0 +1,5 @@
+# Dify 工作流 DSL 技能：把 assets/ 作为技能资源基底挂进 skills 目录。
+# 装完在编辑器输入 /dify-workflow-dsl 可调用；模型在处理 Dify YAML 时也会自动选它。
+- insert:
+    - id: dify-dsl-skill
+      name: '@local/dify-dsl-skill'

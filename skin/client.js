@@ -882,6 +882,48 @@ window.__ModuleLoader__.load({
       return scale;
     }
 
+    /** 某一档在给定主色下派生出来的 OKLCH 亮度（跟 deriveScale 同一套算术）。 */
+    function stepLightness(step, seed) {
+      const row = BRAND_STEPS.find((entry) => entry[0] === step);
+      if (row === undefined) return null;
+      return clamp(row[1] + (seed.L - BASE_L) * row[3], 0.02, 0.995);
+    }
+
+    /**
+     * 语义主色 `--dsw-alias-state-business-primary` 的可读版。
+     *
+     * 色阶派生只保证「各档亮度阶梯 + 饱和度比例」，不管对比度。官方把这一档
+     * **当前景色**用：会话顶部视图 tab 的选中文字和下划线（`kiGsTW_tabActive`）、
+     * 「更多视图」按钮（`viewsMoreActive`）、轨迹详情 tab（`rh_gBW_detailTabActive`）、
+     * 轨迹里 user 行标签、`programAction[aria-pressed=true]`；另外还有两处当填充
+     * （tab 下划线、输入框 pending 小圆点）。主色一浅，400 档会冲到 0.995 ——
+     * 选中 tab 就是白字白底、白下划线，等于没有选中态（踩过：主色白）。
+     *
+     * 所以这一档单独夹：
+     * - 近中性（彩度 < 0.045：白、灰、近白）→ 直接退回文字色，任何主题都读得出来；
+     * - 有彩度 → 保留色相与彩度，只把亮度压进可读区间（浅色主题 ≤ 0.68，
+     *   深色主题 ≥ 0.55），品牌观感还在。
+     * 官方默认主色不走这条路（applyLook 里只在用户改过主色时才下发）。
+     */
+    const ACCENT_LIGHT_MAX = 0.68;
+    const ACCENT_DARK_MIN = 0.55;
+    const ACCENT_NEUTRAL_CHROMA = 0.045;
+
+    function accentOverrides(seed) {
+      if (seed === null) return null;
+      if (seed.C < ACCENT_NEUTRAL_CHROMA) {
+        const text = 'var(--dsw-alias-label-primary)';
+        return { light: text, dark: text };
+      }
+      const light = stepLightness(400, seed);
+      const dark = stepLightness(500, seed);
+      if (light === null || dark === null) return null;
+      return {
+        light: oklchStr(Math.min(light, ACCENT_LIGHT_MAX), seed.C, seed.H),
+        dark: oklchStr(Math.max(dark, ACCENT_DARK_MIN), seed.C, seed.H),
+      };
+    }
+
     /** overrideTokens 要求每个 token 带 light/dark 两值；色阶本身不分主题。 */
     function toOverrides(scale) {
       const overrides = {};
@@ -1299,6 +1341,9 @@ body[data-ds-dark-theme] [class*="_markdown"] :not(pre)>code{color:#000!importan
       const scale = deriveScale(look.seed);
       if (String(look.seed).toLowerCase() !== DEFAULT_SEED && scale !== null) {
         Object.assign(overrides, toOverrides(scale));
+        // 选中态/焦点这类「当文字用」的品牌色单独夹一次，见 accentOverrides。
+        const accent = accentOverrides(parseColor(look.seed));
+        if (accent !== null) overrides['--dsw-alias-state-business-primary'] = accent;
       }
       for (const surface of SURFACES) {
         const user = readTargetColor(surface.id);

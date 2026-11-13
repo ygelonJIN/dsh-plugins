@@ -1059,31 +1059,27 @@ html [class*="composerSeat"] :has(> [data-composer-dock]:not(:empty)) > [class*=
 
 
     /**
-     * 浮层材质统一：所有弹出层跟账户菜单一样。
+     * 悬停卡片（HoverCard）：「浮层统一」这套已经**整块退役**，别再往回加。
      *
-     * 账户菜单走 MenuSurface：background 读 --dsw-menu-surface-fill，外加
-     * backdrop-filter: var(--dsw-menu-backdrop-filter)（blur(40px) saturate(150%)）。
-     * 而 HoverCard（文件区 / 工作区 / 会话行悬停出来的卡片）自己是这样写的：
-     *   ._card_38jqx_9{ --dsw-hovercard-bg:#2C2C2E; background:var(--dsw-hovercard-bg) }
-     * —— 深灰实色、没有模糊。变量是它**自己声明的**，从 body 写内联压不过，
-     * 只能用规则 + 抬 specificity（双 [class]）覆盖，跟 --changes-fill 是同一个坑。
+     * 历史：0.2.1-rc.3 及以前，HoverCard 自己声明 `._card_38jqx_9{--dsw-hovercard-bg:#2C2C2E}`，
+     * 深灰实色、两套主题都不变，所以 skin 用规则抬 specificity（双 [class]）把它换成
+     * 跟账户菜单同源的浅色材质，并同时把文字拉回 label-primary —— 当时背景和文字是一起改的，
+     * 所以是对的。
      *
-     * 但**光搬半透明色不够**：macOS 上 MenuSurface 底下还垫了一层不透明的
-     * `[data-menu-backing]`（`z-index:-1; background:var(--dsw-alias-bg-base)`，
-     * 只有 `html[data-platform=darwin]` 才 display:block）。所以你看到的“账户菜单不透明”
-     * 是那层底板挡住了后面，不是菜单自己实心。只搬 --dsw-menu-surface-fill 会让悬停卡
-     * 透出底下内容、字看不清。
-     * 做法：把两层一起塞进 background —— 多背景里第一层在上，只有最后一层能带颜色，
-     * 所以菜单色走 linear-gradient 铺在上、bg-base 当不透明底。跟官方 backing 同源，
-     * 用户把对话区调透明时两边一起变。既然底已经不透明，模糊就看不出效果，省掉不做。
+     * 0.2.2-rc.2 起官方重构：卡片不再声明自己的变量，改读 alias
+     * `._card_l6gf9_9{background:var(--dsw-alias-hovercard-bg)}`，并且 body 与
+     * `body[data-ds-dark-theme]` 两套配色里都写成 `--dsw-static-neutral-bluish-850`，
+     * 同时配套 `--dsw-alias-hovercard-label-primary/secondary/tertiary`（白 / 300 / 400）
+     * 和 `--dsw-alias-hovercard-state-done/-error`。官方文档明确写的是
+     * 「该表面在两套配色中均保持深色」，也就是**深色键帽是设计意图**，跟 tooltip 一致。
      *
-     * 还有一处必须一起改：**文字色**。卡片的文字是照着深灰底写的（浅色），
-     * 背景一旦变浅就白字浅底、看不清。所以同时把 color 拉回 label-primary，
-     * 并让子元素继承（内部有些行是写死的浅色）。
+     * 老规则留在 0.2.2 上会变成半吊子：`--dsw-hovercard-bg` 已无人读取（asar 里 0 处定义），
+     * 背景退回官方深色；而 `color:label-primary` + `*{color:inherit}` 的 specificity 是 0,3,0，
+     * 压得过官方子元素的 0,1,0 —— 浅色主题下就是深底 + 近黑字，「全黑看不清」。
+     * 顺带把三档 label 和紫/红状态色一起抹平。
      *
-     * 同样带 _card_ 的 markdown 代码块不读这个变量、也不受影响；而「改动文件预览」
-     * 走的是另一个变体 `_preview_38jqx_52`（`background:var(--dsw-alias-bg-layer-1)`
-     * 且自带 color），本来就不透明、文字正确，不需要动。
+     * 结论：不覆盖。要动这块，改 `--dsw-alias-hovercard-bg` 时必须**同时**改三档
+     * `--dsw-alias-hovercard-label-*`，且永远不要写 `*{color:inherit}` 这种一网打尽的规则。
      */
     /**
      * 深色主题下，「透明白」那几档底色叠在深底上会变成浅灰（侧栏行 85%/45%、代码块 30%），
@@ -1104,14 +1100,6 @@ body[data-ds-dark-theme] [class*="sidebarCol"] [data-row-key][data-sm-running] [
 body[data-ds-dark-theme] [class*="md-code-block"],
 body[data-ds-dark-theme] [class*="md-code-block"] *{color:#000!important;-webkit-text-fill-color:#000}
 body[data-ds-dark-theme] [class*="_markdown"] :not(pre)>code{color:#000!important;-webkit-text-fill-color:#000}
-`;
-
-    const OVERLAY_RULES = `
-html[data-ys-overlay-unified] [class*="_card_"][class][class]{
-  --dsw-hovercard-bg:linear-gradient(var(--dsw-menu-surface-fill),var(--dsw-menu-surface-fill)),var(--dsw-alias-bg-base);
-  color:var(--dsw-alias-label-primary)
-}
-html[data-ys-overlay-unified] [class*="_card_"][class][class] *{color:inherit}
 `;
 
     const ALPHA_RULES = [
@@ -1805,8 +1793,9 @@ html[data-ys-overlay-unified] [class*="_card_"][class][class] *{color:inherit}
             if (touched) root.setAttribute(flag, '');
             else root.removeAttribute(flag);
           };
-          // 浮层统一默认开：悬停卡片跟账户菜单用同一块材质，不跟随“有没有调过菜单色”。
-          root.setAttribute('data-ys-overlay-unified', '');
+          // 悬停卡片不再接管（官方 0.2.2-rc.2 起是深色键帽，见 OVERLAY 退役说明）。
+          // 顺手清掉热更新残留的旧属性，避免旧的注入规则或外部样式还认这个开关。
+          root.removeAttribute('data-ys-overlay-unified');
         };
 
         /** 只重建 token 覆盖 + 自有变量，不动标题/favicon/标语。 */
@@ -1843,7 +1832,7 @@ html[data-ys-overlay-unified] [class*="_card_"][class][class] *{color:inherit}
           for (const stale of document.querySelectorAll('style[data-plugin-css="' + STYLE_ID + '"]')) stale.remove();
           const tag = document.createElement('style');
           tag.setAttribute('data-plugin-css', STYLE_ID);
-          tag.textContent = PALETTE_CSS + PANE_RULES + DOCK_RULES + OVERLAY_RULES + DARK_TEXT_RULES;
+          tag.textContent = PALETTE_CSS + PANE_RULES + DOCK_RULES + DARK_TEXT_RULES;
           document.head.appendChild(tag);
           return () => tag.remove();
         });

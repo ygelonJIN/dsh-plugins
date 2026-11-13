@@ -40,6 +40,12 @@ try {
   // --- invalid ids are refused --------------------------------------------
   await assert.rejects(() => enqueuePending(file, '../escape'), /refusing unsafe session id/);
 
+  // --- a 0.2.2-era bare UUID id is a valid queue entry --------------------
+  const BARE = '35c360a0-16ba-4dcc-b152-6766f9e30bf3';
+  await enqueuePending(file, BARE, { reason: 'active' });
+  assert.equal((await readPending(file)).some((entry) => entry.sessionId === BARE), true);
+  assert.equal(await removePending(file, BARE), true);
+
   // --- remove one ---------------------------------------------------------
   assert.equal(await removePending(file, ALPHA), true);
   assert.equal(await removePending(file, ALPHA), false);

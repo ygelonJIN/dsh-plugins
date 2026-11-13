@@ -27,16 +27,16 @@ function snapshot(id, extra = {}) {
   };
 }
 
-async function makeTree() {
+async function makeTree(childId = CHILD) {
   const sessions = path.join(ROOT, 'sessions');
   const targetDir = path.join(sessions, '--proj--', TARGET);
-  const childDir = path.join(sessions, '--proj--', CHILD);
+  const childDir = path.join(sessions, '--proj--', childId);
   const cacheDir = path.join(ROOT, 'storages', 'session_projcache', 'sessions');
   for (const dir of [targetDir, childDir, cacheDir]) await mkdir(dir, { recursive: true });
   await writeFile(path.join(targetDir, 'session.v4.jsonl.zstd'), 'target');
   await writeFile(path.join(childDir, 'session.v4.jsonl.zstd'), 'child');
   await writeFile(path.join(cacheDir, `${TARGET}.json`), '{}');
-  await writeFile(path.join(cacheDir, `${CHILD}.json`), '{}');
+  await writeFile(path.join(cacheDir, `${childId}.json`), '{}');
   return { targetDir, childDir, cacheDir };
 }
 
@@ -82,9 +82,10 @@ function harness(options = {}) {
   }
   const base = snapshot(TARGET, options.header ?? {});
   if (options.formatStatus !== undefined) base.formatStatus = options.formatStatus;
-  const child = snapshot(CHILD, { origin: 'subagent', parentSession: TARGET });
+  const childId = options.childId ?? CHILD;
+  const child = snapshot(childId, { origin: 'subagent', parentSession: TARGET });
   if (options.formatStatus !== undefined) child.formatStatus = options.formatStatus;
-  const snapshots = new Map([[TARGET, base], [CHILD, child]]);
+  const snapshots = new Map([[TARGET, base], [childId, child]]);
   const persistence = {
     async stat(id) {
       return snapshots.get(id);
@@ -357,6 +358,38 @@ try {
     assert.equal(result.status, 200);
     assert.deepEqual(calls.filter(([verb]) => verb === 'open'), []);
     assert.equal(await exists(tree.targetDir), false);
+  }
+
+  // --- a post-0.2.2 subagent id (bare UUID) goes with its parent ----------
+  {
+    await resetTree();
+    const BARE_CHILD = '35c360a0-16ba-4dcc-b152-6766f9e30bf3';
+    const tree = await makeTree(BARE_CHILD);
+    const { post } = harness({ childId: BARE_CHILD });
+    const result = await post({ sessionId: TARGET });
+    assert.equal(result.status, 200);
+    assert.equal(result.body.ok, true);
+    assert.deepEqual(result.body.deleted.sort(), [TARGET, BARE_CHILD].sort());
+    assert.deepEqual(result.body.warnings, []);
+    assert.equal(result.body.directories, 2);
+    assert.equal(await exists(tree.targetDir), false);
+    assert.equal(await exists(tree.childDir), false);
+    assert.deepEqual(await readdir(tree.cacheDir), []);
+  }
+
+  // --- an unrecognizable descendant is reported, not fatal ----------------
+  {
+    await resetTree();
+    const WEIRD = 'sub:35c360a0-16ba-4dcc-b152-6766f9e30bf3';
+    const tree = await makeTree(WEIRD);
+    const { post } = harness({ childId: WEIRD });
+    const result = await post({ sessionId: TARGET });
+    assert.equal(result.status, 200);
+    assert.deepEqual(result.body.deleted, [TARGET]);
+    assert.equal(result.body.warnings.length, 1);
+    assert.match(result.body.warnings[0], /unrecognized session id, left on disk/);
+    assert.equal(await exists(tree.targetDir), false);
+    assert.equal(await exists(tree.childDir), true);
   }
 
   // --- purge: archived queued Session is removed --------------------------

@@ -17,7 +17,20 @@ import path from 'node:path';
  * surviving Sessions) or the spill/cache directories.
  */
 
-export const SESSION_ID_PATTERN = /^session-[A-Za-z0-9-]{1,160}$/;
+/**
+ * Session ids on disk have two shapes:
+ *
+ *   - `session-<slug>` — every id the Host issued before 0.2.2;
+ *   - a bare UUID — what 0.2.2 issues for Sessions created after the upgrade
+ *     (in practice subagent children, so one legacy parent can own a mixed
+ *     family).
+ *
+ * Both are valid. Accepting only the prefixed form makes the deletion of a
+ * parent whose children were spawned by the newer Host die on the first child
+ * with `refusing unsafe session id`, after the work was already stopped.
+ */
+export const SESSION_ID_PATTERN =
+  /^(?:session-[A-Za-z0-9-]{1,160}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 
 export function isSessionId(value) {
   return typeof value === 'string' && SESSION_ID_PATTERN.test(value);

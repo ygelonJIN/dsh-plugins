@@ -21,24 +21,34 @@ try {
   // --- id validation -------------------------------------------------------
   assert.equal(isSessionId('session-0e9aa5ed-8dc7-48b4-b62d-1b26d6f693f3'), true);
   assert.equal(isSessionId('session-abc'), true);
+  // 0.2.2 issues bare UUIDs for Sessions created after the upgrade.
+  assert.equal(isSessionId('35c360a0-16ba-4dcc-b152-6766f9e30bf3'), true);
+  assert.equal(isSessionId('35C360A0-16BA-4DCC-B152-6766F9E30BF3'), true);
   assert.equal(isSessionId('../escape'), false);
   assert.equal(isSessionId('session-../escape'), false);
+  assert.equal(isSessionId('../35c360a0-16ba-4dcc-b152-6766f9e30bf3'), false);
+  assert.equal(isSessionId('35c360a0-16ba-4dcc-b152-6766f9e30bf3/../x'), false);
+  assert.equal(isSessionId('35c360a0-16ba-4dcc-b152'), false);
   assert.equal(isSessionId('session-'), false);
   assert.equal(isSessionId(42), false);
 
   // --- fixture -------------------------------------------------------------
   const sessions = path.join(root, 'sessions');
   const cache = path.join(root, 'cache');
+  // A child spawned after the 0.2.2 upgrade: bare UUID, no `session-` prefix.
+  const BARE = '35c360a0-16ba-4dcc-b152-6766f9e30bf3';
   const alphaOne = path.join(sessions, '--proj-a--', 'session-alpha');
   const alphaTwo = path.join(sessions, '--proj-b--', 'session-alpha');
   const beta = path.join(sessions, '--proj-a--', 'session-beta');
-  for (const dir of [alphaOne, alphaTwo, beta]) {
+  const bareChild = path.join(sessions, '--proj-a--', BARE);
+  for (const dir of [alphaOne, alphaTwo, beta, bareChild]) {
     await mkdir(dir, { recursive: true });
     await writeFile(path.join(dir, 'session.v4.jsonl.zstd'), 'log');
   }
   await mkdir(cache, { recursive: true });
   await writeFile(path.join(cache, 'session-alpha.json'), '{}');
   await writeFile(path.join(cache, 'session-beta.json'), '{}');
+  await writeFile(path.join(cache, `${BARE}.json`), '{}');
 
   // A directory symlink must never be followed or removed.
   const outside = path.join(root, 'outside');
@@ -66,9 +76,14 @@ try {
   // A second pass over an absent Session is a no-op.
   assert.deepEqual(await removeSessionDirectories(sessions, ['session-alpha']), []);
 
+  // --- bare UUID Sessions (0.2.2 and later) --------------------------------
+  assert.deepEqual(await findSessionDirs(sessions, BARE), [bareChild]);
+  assert.deepEqual(await removeSessionDirectories(sessions, [BARE]), [bareChild]);
+  assert.equal(await exists(bareChild), false);
+
   // --- projection cache ----------------------------------------------------
-  const cached = await removeProjectionCacheEntries(cache, ['session-alpha', 'session-gone']);
-  assert.deepEqual(cached, [path.join(cache, 'session-alpha.json')]);
+  const cached = await removeProjectionCacheEntries(cache, ['session-alpha', BARE, 'session-gone']);
+  assert.deepEqual(cached.sort(), [path.join(cache, `${BARE}.json`), path.join(cache, 'session-alpha.json')].sort());
   assert.equal(await exists(path.join(cache, 'session-beta.json')), true);
   assert.deepEqual(await readdir(cache), ['session-beta.json']);
 

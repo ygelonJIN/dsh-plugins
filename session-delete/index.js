@@ -275,8 +275,15 @@ async function deleteSession(ctx, requestedId, options = {}) {
 
   const snapshots = await persistence.list();
   const descendants = descendantSessionIds(snapshots, requestedId);
-  const targets = [requestedId, ...descendants];
   const warnings = [];
+  // A descendant whose id does not match the on-disk naming rules cannot be
+  // located or removed. Report it and delete the rest: aborting the whole
+  // request would stop the work and then change nothing at all.
+  const targets = [requestedId];
+  for (const descendant of descendants) {
+    if (isSessionId(descendant)) targets.push(descendant);
+    else warnings.push(`descendant ${descendant}: unrecognized session id, left on disk`);
+  }
 
   // Stop first: reminders otherwise count as activity forever, and a running
   // turn would keep its Agent live. This is the same seam the archive path
